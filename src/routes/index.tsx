@@ -1,6 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { Heart, Instagram, Mail, MapPin, Sparkles, Star, Leaf, Clock } from "lucide-react";
+import { Heart, Instagram, Mail, MapPin, Sparkles, Star, Leaf, Clock, Receipt } from "lucide-react";
 import logo from "@/assets/lekker-logo.jpg";
 import crepeChoco from "@/assets/crepe-chocolate.jpg";
 import crepePistachio from "@/assets/crepe-pistachio.jpg";
@@ -104,9 +104,14 @@ function Index() {
             <a href="#story" className="hover:text-primary transition-colors">Experience</a>
             <a href="#contact" className="hover:text-primary transition-colors">Contact</a>
           </nav>
-          <a href="#menu" className="hidden md:inline-flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 rounded-full text-sm font-medium hover:opacity-90 transition shadow-soft">
-            <Heart className="w-4 h-4" /> Order Now
-          </a>
+          <div className="hidden md:flex items-center gap-2">
+            <Link to="/pos" className="inline-flex items-center gap-2 border border-primary/30 px-4 py-2.5 rounded-full text-sm font-medium hover:bg-card transition">
+              <Receipt className="w-4 h-4" /> Caisse
+            </Link>
+            <a href="#menu" className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 rounded-full text-sm font-medium hover:opacity-90 transition shadow-soft">
+              <Heart className="w-4 h-4" /> Order Now
+            </a>
+          </div>
         </div>
       </header>
 
