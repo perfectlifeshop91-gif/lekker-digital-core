@@ -14,7 +14,123 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      order_items: {
+        Row: {
+          id: string
+          name: string
+          order_id: string
+          price: number
+          product_id: string | null
+          quantity: number
+          subtotal: number
+        }
+        Insert: {
+          id?: string
+          name: string
+          order_id: string
+          price: number
+          product_id?: string | null
+          quantity: number
+          subtotal: number
+        }
+        Update: {
+          id?: string
+          name?: string
+          order_id?: string
+          price?: number
+          product_id?: string | null
+          quantity?: number
+          subtotal?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          created_at: string
+          customer_name: string | null
+          id: string
+          notes: string | null
+          order_number: number
+          payment_method: string
+          status: string
+          subtotal: number
+          table_number: string | null
+          tax: number
+          total: number
+        }
+        Insert: {
+          created_at?: string
+          customer_name?: string | null
+          id?: string
+          notes?: string | null
+          order_number?: number
+          payment_method?: string
+          status?: string
+          subtotal?: number
+          table_number?: string | null
+          tax?: number
+          total?: number
+        }
+        Update: {
+          created_at?: string
+          customer_name?: string | null
+          id?: string
+          notes?: string | null
+          order_number?: number
+          payment_method?: string
+          status?: string
+          subtotal?: number
+          table_number?: string | null
+          tax?: number
+          total?: number
+        }
+        Relationships: []
+      }
+      products: {
+        Row: {
+          active: boolean
+          category: string
+          created_at: string
+          id: string
+          image: string | null
+          name: string
+          price: number
+        }
+        Insert: {
+          active?: boolean
+          category: string
+          created_at?: string
+          id?: string
+          image?: string | null
+          name: string
+          price: number
+        }
+        Update: {
+          active?: boolean
+          category?: string
+          created_at?: string
+          id?: string
+          image?: string | null
+          name?: string
+          price?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
