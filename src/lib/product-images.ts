@@ -28,6 +28,8 @@ const fallback: Record<string, string> = {
   juices: juiceMango,
   mojitos: mojitoBlueberry,
   icecream: crepePistachio,
+  drinks: crepeChoco,
+  desserts: crepePistachio,
 };
 
 export function getProductImage(name: string, category: string): string {
