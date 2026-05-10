@@ -14,10 +14,38 @@ export type Database = {
   }
   public: {
     Tables: {
+      audit_logs: {
+        Row: {
+          action: string
+          created_at: string
+          entity: string | null
+          id: string
+          payload: Json | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          entity?: string | null
+          id?: string
+          payload?: Json | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          entity?: string | null
+          id?: string
+          payload?: Json | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       order_items: {
         Row: {
           id: string
           name: string
+          notes: string | null
           order_id: string
           price: number
           product_id: string | null
@@ -27,6 +55,7 @@ export type Database = {
         Insert: {
           id?: string
           name: string
+          notes?: string | null
           order_id: string
           price: number
           product_id?: string | null
@@ -36,6 +65,7 @@ export type Database = {
         Update: {
           id?: string
           name?: string
+          notes?: string | null
           order_id?: string
           price?: number
           product_id?: string | null
@@ -63,6 +93,8 @@ export type Database = {
         Row: {
           created_at: string
           customer_name: string | null
+          deleted_at: string | null
+          discount: number
           id: string
           notes: string | null
           order_number: number
@@ -71,11 +103,15 @@ export type Database = {
           subtotal: number
           table_number: string | null
           tax: number
+          tip: number
           total: number
+          waiter_id: string | null
         }
         Insert: {
           created_at?: string
           customer_name?: string | null
+          deleted_at?: string | null
+          discount?: number
           id?: string
           notes?: string | null
           order_number?: number
@@ -84,11 +120,15 @@ export type Database = {
           subtotal?: number
           table_number?: string | null
           tax?: number
+          tip?: number
           total?: number
+          waiter_id?: string | null
         }
         Update: {
           created_at?: string
           customer_name?: string | null
+          deleted_at?: string | null
+          discount?: number
           id?: string
           notes?: string | null
           order_number?: number
@@ -97,37 +137,120 @@ export type Database = {
           subtotal?: number
           table_number?: string | null
           tax?: number
+          tip?: number
           total?: number
+          waiter_id?: string | null
         }
         Relationships: []
       }
       products: {
         Row: {
           active: boolean
+          allergens: string | null
+          available: boolean
+          calories: number | null
           category: string
           created_at: string
+          description: string | null
+          gallery: Json | null
           id: string
           image: string | null
+          ingredients: string | null
           name: string
+          prep_time: number | null
           price: number
+          promo_price: number | null
+          stock: number | null
         }
         Insert: {
           active?: boolean
+          allergens?: string | null
+          available?: boolean
+          calories?: number | null
           category: string
           created_at?: string
+          description?: string | null
+          gallery?: Json | null
           id?: string
           image?: string | null
+          ingredients?: string | null
           name: string
+          prep_time?: number | null
           price: number
+          promo_price?: number | null
+          stock?: number | null
         }
         Update: {
           active?: boolean
+          allergens?: string | null
+          available?: boolean
+          calories?: number | null
           category?: string
           created_at?: string
+          description?: string | null
+          gallery?: Json | null
           id?: string
           image?: string | null
+          ingredients?: string | null
           name?: string
+          prep_time?: number | null
           price?: number
+          promo_price?: number | null
+          stock?: number | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          active: boolean
+          avatar_url: string | null
+          created_at: string
+          full_name: string | null
+          id: string
+          phone: string | null
+          salary: number | null
+          shift_hours: string | null
+        }
+        Insert: {
+          active?: boolean
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          id: string
+          phone?: string | null
+          salary?: number | null
+          shift_hours?: string | null
+        }
+        Update: {
+          active?: boolean
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          phone?: string | null
+          salary?: number | null
+          shift_hours?: string | null
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
         }
         Relationships: []
       }
@@ -136,10 +259,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "waiter" | "kitchen" | "cashier"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -266,6 +395,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "waiter", "kitchen", "cashier"],
+    },
   },
 } as const

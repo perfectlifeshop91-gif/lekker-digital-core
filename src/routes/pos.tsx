@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Plus, Minus, Trash2, Receipt, Printer, ShoppingCart, ArrowLeft, History } from "lucide-react";
+import { Plus, Minus, Trash2, Receipt, Printer, ShoppingCart, ArrowLeft, History, StickyNote } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,8 +8,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "sonner";
 import { getProductImage } from "@/lib/product-images";
+import { printBoth, printCustomerReceipt, printKitchenTicket, type ReceiptData } from "@/lib/printing";
 import logo from "@/assets/lekker-logo.jpg";
 
 export const Route = createFileRoute("/pos")({
@@ -18,9 +20,9 @@ export const Route = createFileRoute("/pos")({
 });
 
 type Product = { id: string; name: string; category: string; price: number; image: string | null; active: boolean };
-type CartItem = { product: Product; qty: number };
+type CartItem = { product: Product; qty: number; notes?: string };
 
-const TAX_RATE = 0; // adjust if needed
+const TAX_RATE = 0;
 
 const CATS = [
   { id: "all", label: "Tout" },
@@ -28,6 +30,8 @@ const CATS = [
   { id: "juices", label: "Jus" },
   { id: "mojitos", label: "Mojitos" },
   { id: "icecream", label: "Glaces" },
+  { id: "drinks", label: "Boissons" },
+  { id: "desserts", label: "Desserts" },
 ];
 
 function POSPage() {
@@ -40,11 +44,9 @@ function POSPage() {
   const [tableNumber, setTableNumber] = useState("");
   const [customer, setCustomer] = useState("");
   const [notes, setNotes] = useState("");
-  const [ticket, setTicket] = useState<null | {
-    number: number; items: CartItem[]; subtotal: number; tax: number; total: number;
-    payment: string; tableNumber: string; customer: string; notes: string; date: Date;
-  }>(null);
-  const printRef = useRef<HTMLDivElement>(null);
+  const [discount, setDiscount] = useState(0);
+  const [ticket, setTicket] = useState<ReceiptData | null>(null);
+  const printedOnce = useRef(false);
 
   useEffect(() => {
     (async () => {
@@ -65,8 +67,9 @@ function POSPage() {
   );
 
   const subtotal = cart.reduce((s, i) => s + i.product.price * i.qty, 0);
-  const tax = +(subtotal * TAX_RATE).toFixed(2);
-  const total = +(subtotal + tax).toFixed(2);
+  const discountAmt = Math.min(discount, subtotal);
+  const tax = +((subtotal - discountAmt) * TAX_RATE).toFixed(2);
+  const total = +(subtotal - discountAmt + tax).toFixed(2);
 
   const addToCart = (p: Product) => {
     setCart(prev => {
@@ -82,19 +85,22 @@ function POSPage() {
       return q <= 0 ? [] : [{ ...i, qty: q }];
     }));
   };
+  const setItemNotes = (id: string, n: string) =>
+    setCart(prev => prev.map(i => i.product.id === id ? { ...i, notes: n } : i));
   const removeItem = (id: string) => setCart(prev => prev.filter(i => i.product.id !== id));
-  const clearCart = () => { setCart([]); setTableNumber(""); setCustomer(""); setNotes(""); };
+  const clearCart = () => { setCart([]); setTableNumber(""); setCustomer(""); setNotes(""); setDiscount(0); };
 
   const checkout = async () => {
     if (cart.length === 0) return toast.error("Panier vide");
     const { data: order, error } = await supabase.from("orders").insert({
       subtotal, tax, total,
+      discount: discountAmt,
       payment_method: payment,
       table_number: tableNumber || null,
       customer_name: customer || null,
       notes: notes || null,
     }).select().single();
-    if (error || !order) return toast.error("Erreur commande");
+    if (error || !order) return toast.error("Erreur commande: " + (error?.message ?? ""));
     const items = cart.map(i => ({
       order_id: order.id,
       product_id: i.product.id,
@@ -102,35 +108,33 @@ function POSPage() {
       price: i.product.price,
       quantity: i.qty,
       subtotal: +(i.product.price * i.qty).toFixed(2),
+      notes: i.notes || null,
     }));
     const { error: itemsErr } = await supabase.from("order_items").insert(items);
-    if (itemsErr) return toast.error("Erreur articles");
+    if (itemsErr) return toast.error("Erreur articles: " + itemsErr.message);
     toast.success(`Commande #${order.order_number} enregistrée`);
-    setTicket({
-      number: order.order_number, items: cart, subtotal, tax, total,
-      payment, tableNumber, customer, notes, date: new Date(order.created_at),
-    });
+
+    const receipt: ReceiptData = {
+      orderNumber: order.order_number,
+      items: cart.map(i => ({ name: i.product.name, qty: i.qty, price: i.product.price, notes: i.notes })),
+      subtotal, tax, discount: discountAmt, total,
+      payment, tableNumber, customer, notes,
+      date: new Date(order.created_at),
+      logoUrl: window.location.origin + logo,
+    };
+    setTicket(receipt);
+    printedOnce.current = false;
     clearCart();
   };
 
-  const printTicket = () => {
-    if (!printRef.current) return;
-    const w = window.open("", "_blank", "width=380,height=600");
-    if (!w) return;
-    w.document.write(`<html><head><title>Ticket</title>
-      <style>
-        body{font-family:'Courier New',monospace;padding:12px;color:#000;}
-        h1,h2,h3{margin:4px 0;text-align:center;}
-        .row{display:flex;justify-content:space-between;font-size:13px;}
-        .sep{border-top:1px dashed #000;margin:8px 0;}
-        .tot{font-weight:bold;font-size:16px;}
-        .ctr{text-align:center;font-size:12px;}
-      </style></head><body>${printRef.current.innerHTML}</body></html>`);
-    w.document.close();
-    w.focus();
-    w.print();
-    setTimeout(() => w.close(), 500);
-  };
+  // Auto-print both tickets when ticket dialog opens
+  useEffect(() => {
+    if (ticket && !printedOnce.current) {
+      printedOnce.current = true;
+      // small delay so dialog renders
+      setTimeout(() => printBoth(ticket), 300);
+    }
+  }, [ticket]);
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -149,7 +153,6 @@ function POSPage() {
       </header>
 
       <div className="grid grid-cols-1 gap-4 p-4 lg:grid-cols-[1fr_400px]">
-        {/* Products */}
         <section>
           <div className="mb-3 flex flex-wrap items-center gap-2">
             <Input placeholder="Rechercher un produit…" value={search} onChange={e => setSearch(e.target.value)} className="max-w-xs" />
@@ -188,7 +191,6 @@ function POSPage() {
           )}
         </section>
 
-        {/* Cart */}
         <aside className="sticky top-20 h-fit rounded-xl border border-border bg-card p-4 shadow-sm">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="flex items-center gap-2 font-serif text-xl font-semibold">
@@ -203,20 +205,34 @@ function POSPage() {
               <div className="py-8 text-center text-sm text-muted-foreground">Cliquez sur un produit pour l'ajouter</div>
             )}
             {cart.map(i => (
-              <div key={i.product.id} className="flex items-center gap-2 rounded-lg border border-border p-2">
-                <img src={getProductImage(i.product.name, i.product.category)} className="h-12 w-12 rounded object-cover" alt="" />
-                <div className="min-w-0 flex-1">
-                  <div className="truncate text-sm font-medium">{i.product.name}</div>
-                  <div className="text-xs text-muted-foreground">{i.product.price} DH</div>
+              <div key={i.product.id} className="rounded-lg border border-border p-2">
+                <div className="flex items-center gap-2">
+                  <img src={getProductImage(i.product.name, i.product.category)} className="h-12 w-12 rounded object-cover" alt="" />
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm font-medium">{i.product.name}</div>
+                    <div className="text-xs text-muted-foreground">{i.product.price} DH</div>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Button size="icon" variant="outline" className="h-7 w-7" onClick={() => updateQty(i.product.id, -1)}><Minus className="h-3 w-3" /></Button>
+                    <span className="w-6 text-center text-sm font-medium">{i.qty}</span>
+                    <Button size="icon" variant="outline" className="h-7 w-7" onClick={() => updateQty(i.product.id, 1)}><Plus className="h-3 w-3" /></Button>
+                  </div>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button className={`rounded p-1 ${i.notes ? "text-primary" : "text-muted-foreground"} hover:bg-muted`}>
+                        <StickyNote className="h-3.5 w-3.5" />
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-64">
+                      <Label className="text-xs">Note pour la cuisine</Label>
+                      <Textarea rows={2} value={i.notes ?? ""} onChange={e => setItemNotes(i.product.id, e.target.value)} placeholder="Sans sucre, extra…" />
+                    </PopoverContent>
+                  </Popover>
+                  <button onClick={() => removeItem(i.product.id)} className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-destructive">
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
                 </div>
-                <div className="flex items-center gap-1">
-                  <Button size="icon" variant="outline" className="h-7 w-7" onClick={() => updateQty(i.product.id, -1)}><Minus className="h-3 w-3" /></Button>
-                  <span className="w-6 text-center text-sm font-medium">{i.qty}</span>
-                  <Button size="icon" variant="outline" className="h-7 w-7" onClick={() => updateQty(i.product.id, 1)}><Plus className="h-3 w-3" /></Button>
-                </div>
-                <button onClick={() => removeItem(i.product.id)} className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-destructive">
-                  <Trash2 className="h-3.5 w-3.5" />
-                </button>
+                {i.notes && <div className="mt-1 truncate pl-14 text-xs italic text-primary">★ {i.notes}</div>}
               </div>
             ))}
           </div>
@@ -232,25 +248,32 @@ function POSPage() {
                 <Input value={customer} onChange={e => setCustomer(e.target.value)} placeholder="Nom" />
               </div>
             </div>
-            <div>
-              <Label className="text-xs">Paiement</Label>
-              <Select value={payment} onValueChange={setPayment}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="cash">Espèces</SelectItem>
-                  <SelectItem value="card">Carte</SelectItem>
-                  <SelectItem value="transfer">Virement</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <Label className="text-xs">Paiement</Label>
+                <Select value={payment} onValueChange={setPayment}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="cash">Espèces</SelectItem>
+                    <SelectItem value="card">Carte</SelectItem>
+                    <SelectItem value="transfer">Virement</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-xs">Remise (DH)</Label>
+                <Input type="number" min={0} value={discount} onChange={e => setDiscount(+e.target.value || 0)} />
+              </div>
             </div>
             <div>
-              <Label className="text-xs">Notes</Label>
+              <Label className="text-xs">Notes générales</Label>
               <Textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} placeholder="Allergies, à emporter…" />
             </div>
           </div>
 
           <div className="mt-3 space-y-1 border-t border-border pt-3 text-sm">
             <div className="flex justify-between"><span className="text-muted-foreground">Sous-total</span><span>{subtotal.toFixed(2)} DH</span></div>
+            {discountAmt > 0 && <div className="flex justify-between text-destructive"><span>Remise</span><span>-{discountAmt.toFixed(2)} DH</span></div>}
             {TAX_RATE > 0 && <div className="flex justify-between"><span className="text-muted-foreground">TVA</span><span>{tax.toFixed(2)} DH</span></div>}
             <div className="flex justify-between text-lg font-bold"><span>Total</span><span className="text-primary">{total.toFixed(2)} DH</span></div>
           </div>
@@ -261,44 +284,41 @@ function POSPage() {
         </aside>
       </div>
 
-      {/* Ticket Dialog */}
       <Dialog open={!!ticket} onOpenChange={o => !o && setTicket(null)}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Ticket de caisse</DialogTitle>
+            <DialogTitle>Commande #{ticket?.orderNumber}</DialogTitle>
           </DialogHeader>
           {ticket && (
-            <div ref={printRef}>
-              <h2>LEKKER</h2>
-              <div className="ctr">Al Hoceima · Morocco</div>
-              <div className="ctr">Un goût ♡ bonheur</div>
-              <div className="sep" />
-              <div className="row"><span>Ticket #</span><span>{ticket.number}</span></div>
-              <div className="row"><span>Date</span><span>{ticket.date.toLocaleString()}</span></div>
-              {ticket.tableNumber && <div className="row"><span>Table</span><span>{ticket.tableNumber}</span></div>}
-              {ticket.customer && <div className="row"><span>Client</span><span>{ticket.customer}</span></div>}
-              <div className="sep" />
-              {ticket.items.map(i => (
-                <div key={i.product.id}>
-                  <div className="row"><span>{i.product.name}</span><span>{(i.product.price * i.qty).toFixed(2)}</span></div>
-                  <div className="row" style={{ color: "#666" }}>
-                    <span>  {i.qty} × {i.product.price} DH</span><span></span>
+            <div className="max-h-[60vh] overflow-auto rounded-lg border border-border bg-muted/30 p-4 text-sm">
+              <div className="mb-2 text-center font-serif text-2xl font-bold tracking-widest">LEKKER</div>
+              <div className="mb-3 text-center text-xs text-muted-foreground">Al Hoceima · Morocco</div>
+              <div className="border-t border-dashed border-border py-2">
+                <div className="flex justify-between"><span>Ticket #</span><span className="font-bold">{ticket.orderNumber}</span></div>
+                <div className="flex justify-between text-xs text-muted-foreground"><span>{ticket.date.toLocaleString()}</span></div>
+                {ticket.tableNumber && <div className="flex justify-between"><span>Table</span><span>{ticket.tableNumber}</span></div>}
+                {ticket.customer && <div className="flex justify-between"><span>Client</span><span>{ticket.customer}</span></div>}
+              </div>
+              <div className="border-t border-dashed border-border py-2">
+                {ticket.items.map((i, k) => (
+                  <div key={k} className="mb-1">
+                    <div className="flex justify-between"><span>{i.qty} × {i.name}</span><span>{(i.qty * i.price).toFixed(2)}</span></div>
+                    {i.notes && <div className="pl-4 text-xs italic text-primary">★ {i.notes}</div>}
                   </div>
-                </div>
-              ))}
-              <div className="sep" />
-              <div className="row"><span>Sous-total</span><span>{ticket.subtotal.toFixed(2)} DH</span></div>
-              {ticket.tax > 0 && <div className="row"><span>TVA</span><span>{ticket.tax.toFixed(2)} DH</span></div>}
-              <div className="row tot"><span>TOTAL</span><span>{ticket.total.toFixed(2)} DH</span></div>
-              <div className="row"><span>Paiement</span><span>{ticket.payment}</span></div>
-              {ticket.notes && <><div className="sep" /><div style={{ fontSize: 12 }}>Notes: {ticket.notes}</div></>}
-              <div className="sep" />
-              <div className="ctr">Merci & à bientôt 🤍</div>
+                ))}
+              </div>
+              <div className="border-t border-dashed border-border py-2">
+                <div className="flex justify-between"><span>Sous-total</span><span>{ticket.subtotal.toFixed(2)} DH</span></div>
+                {ticket.discount && ticket.discount > 0 ? <div className="flex justify-between text-destructive"><span>Remise</span><span>-{ticket.discount.toFixed(2)} DH</span></div> : null}
+                <div className="mt-1 flex justify-between text-lg font-bold"><span>TOTAL</span><span>{ticket.total.toFixed(2)} DH</span></div>
+              </div>
+              <div className="mt-2 text-center text-xs italic">Merci d'avoir choisi LEKKER ❤</div>
             </div>
           )}
           <DialogFooter className="gap-2 sm:gap-2">
-            <Button variant="outline" onClick={() => setTicket(null)}>Fermer</Button>
-            <Button onClick={printTicket}><Printer className="mr-2 h-4 w-4" /> Imprimer</Button>
+            <Button variant="outline" onClick={() => ticket && printKitchenTicket(ticket)}><Printer className="mr-2 h-4 w-4" /> Cuisine</Button>
+            <Button onClick={() => ticket && printCustomerReceipt(ticket)}><Printer className="mr-2 h-4 w-4" /> Reçu Client</Button>
+            <Button variant="ghost" onClick={() => setTicket(null)}>Fermer</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
