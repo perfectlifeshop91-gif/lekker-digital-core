@@ -6,12 +6,22 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
+import { ChefHat, ShieldCheck, UserRound } from "lucide-react";
 import logo from "@/assets/lekker-logo.jpg";
 
 export const Route = createFileRoute("/auth")({
   component: AuthPage,
-  head: () => ({ meta: [{ title: "LEKKER · Connexion" }] }),
+  head: () => ({ meta: [{ title: "LEKKER · Connexion / Inscription" }] }),
 });
+
+async function redirectByRole(nav: ReturnType<typeof useNavigate>, userId: string) {
+  const { data } = await supabase.from("user_roles").select("role").eq("user_id", userId);
+  const roles = (data ?? []).map(r => r.role);
+  if (roles.includes("admin")) return nav({ to: "/admin" });
+  if (roles.includes("kitchen")) return nav({ to: "/kitchen" });
+  if (roles.includes("waiter")) return nav({ to: "/waiter" });
+  return nav({ to: "/admin" });
+}
 
 function AuthPage() {
   const nav = useNavigate();
@@ -19,75 +29,82 @@ function AuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
+  const [role, setRole] = useState<"waiter" | "kitchen" | "cashier">("waiter");
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session) nav({ to: "/admin" });
+      if (data.session) redirectByRole(nav, data.session.user.id);
     });
   }, [nav]);
 
   const signIn = async () => {
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
     if (error) return toast.error(error.message);
     toast.success("Connecté");
-    nav({ to: "/admin" });
+    if (data.session) redirectByRole(nav, data.session.user.id);
   };
 
   const signUp = async () => {
+    if (!email || !password) return toast.error("Email et mot de passe requis");
     setLoading(true);
     const { error } = await supabase.auth.signUp({
       email, password,
       options: {
-        data: { full_name: name },
+        data: { full_name: name, signup_role: role },
         emailRedirectTo: window.location.origin + "/auth",
       },
     });
     setLoading(false);
     if (error) return toast.error(error.message);
-    toast.success("Compte créé. Vérifiez votre email.");
+    toast.success("Compte créé. Vérifiez votre email puis connectez-vous.");
   };
 
   const signInGoogle = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: window.location.origin + "/admin" },
+      options: { redirectTo: window.location.origin + "/auth" },
     });
     if (error) toast.error(error.message);
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background to-muted p-4">
-      <div className="w-full max-w-md rounded-2xl border border-border bg-card p-8 shadow-2xl">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background via-background to-muted p-4">
+      <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 sm:p-8 shadow-2xl">
         <div className="mb-6 text-center">
           <img src={logo} alt="LEKKER" className="mx-auto mb-3 h-16 w-16 rounded-full object-cover shadow-lg" />
           <h1 className="font-serif text-3xl font-bold tracking-widest">LEKKER</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Espace Personnel</p>
+          <p className="mt-1 text-sm text-muted-foreground">Espace Personnel · Staff Portal</p>
         </div>
 
         <Tabs defaultValue="signin">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="signin">Connexion</TabsTrigger>
-            <TabsTrigger value="signup">Créer compte</TabsTrigger>
+            <TabsTrigger value="signup">Créer un compte</TabsTrigger>
           </TabsList>
 
           <TabsContent value="signin" className="space-y-3 pt-4">
             <div>
               <Label>Email</Label>
-              <Input type="email" value={email} onChange={e => setEmail(e.target.value)} />
+              <Input type="email" value={email} onChange={e => setEmail(e.target.value)} autoComplete="email" />
             </div>
             <div>
               <Label>Mot de passe</Label>
-              <Input type="password" value={password} onChange={e => setPassword(e.target.value)} />
+              <Input type="password" value={password} onChange={e => setPassword(e.target.value)} autoComplete="current-password" />
             </div>
-            <Button className="w-full" disabled={loading} onClick={signIn}>Se connecter</Button>
+            <Button className="w-full" disabled={loading} onClick={signIn} size="lg">
+              Se connecter
+            </Button>
+            <p className="text-center text-xs text-muted-foreground">
+              Vous serez redirigé vers votre dashboard selon votre rôle.
+            </p>
           </TabsContent>
 
           <TabsContent value="signup" className="space-y-3 pt-4">
             <div>
               <Label>Nom complet</Label>
-              <Input value={name} onChange={e => setName(e.target.value)} />
+              <Input value={name} onChange={e => setName(e.target.value)} placeholder="Ex: Yassine Amrani" />
             </div>
             <div>
               <Label>Email</Label>
@@ -97,7 +114,36 @@ function AuthPage() {
               <Label>Mot de passe</Label>
               <Input type="password" value={password} onChange={e => setPassword(e.target.value)} />
             </div>
-            <Button className="w-full" disabled={loading} onClick={signUp}>Créer le compte</Button>
+            <div>
+              <Label className="mb-2 block">Je suis…</Label>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { v: "waiter", label: "Serveur", icon: UserRound },
+                  { v: "kitchen", label: "Cuisine", icon: ChefHat },
+                  { v: "cashier", label: "Caissier", icon: ShieldCheck },
+                ].map(o => {
+                  const Icon = o.icon;
+                  const active = role === o.v;
+                  return (
+                    <button
+                      key={o.v}
+                      type="button"
+                      onClick={() => setRole(o.v as typeof role)}
+                      className={`flex flex-col items-center gap-1 rounded-lg border p-3 text-xs transition ${active ? "border-primary bg-primary/10 text-primary" : "border-border hover:bg-muted"}`}
+                    >
+                      <Icon className="h-5 w-5" />
+                      {o.label}
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="mt-2 text-[11px] text-muted-foreground">
+                Le rôle <strong>Admin</strong> est attribué uniquement par un administrateur existant.
+              </p>
+            </div>
+            <Button className="w-full" disabled={loading} onClick={signUp} size="lg">
+              Créer mon compte
+            </Button>
           </TabsContent>
         </Tabs>
 
