@@ -1,58 +1,83 @@
-This is a huge scope (POS + Kitchen + Waiters + Admin Analytics + AI + Printing + Auth/Roles + many products). I'll deliver it in **3 phases** so each is shippable. Confirm Phase 1 to start; I'll continue automatically into 2 and 3 unless you say otherwise.
+# LEKKER Enterprise Upgrade — Phase 2 + 3
 
-## Phase 1 — Foundation, Auth & Roles, Expanded Menu, Dual Ticket Printing
+Tu veux qu'on transforme la plateforme en vrai SaaS restaurant complet. Voici le plan détaillé que je vais exécuter (Instagram @lekker___1 = référence brand visuelle).
 
-**Database (migrations)**
-- `profiles` (linked to auth.users): full_name, phone, avatar, shift_hours, salary, active
-- `app_role` enum: `admin`, `waiter`, `kitchen`, `cashier`
-- `user_roles` + `has_role()` security definer (no recursion)
-- Extend `products`: description, ingredients, allergens, stock, prep_time, calories, promo_price, available, gallery
-- Extend `orders`: status enum (pending/preparing/ready/delivered/canceled), waiter_id, discount, deleted_at (soft delete), tip
-- `order_items`: notes
-- `audit_logs`: user_id, action, entity, payload
-- RLS: admins full access; waiters see own orders; kitchen sees active orders; public read for menu only
+## 1. Multi-langue (FR · AR · Tarifit · EN · ES)
+- `src/lib/i18n.ts` — dictionnaire complet + `useT()` hook + sélecteur global (persist localStorage)
+- Sélecteur de langue dans header (drapeaux)
+- **Tickets imprimés** : la langue choisie au checkout (par client) détermine la langue du ticket client. Ticket cuisine reste FR (langue staff).
+- Support RTL pour AR + Tarifit (`dir="rtl"`)
 
-**Auth**
-- Email/password + Google login at `/auth`
-- `_authenticated` layout guard
-- Auto-create profile + default role on signup via trigger
+## 2. Auth serveur — bouton dédié
+- Sur `/auth` : 2 onglets clairs **"Client / Public"** vs **"Personnel (Serveur · Cuisine · Admin)"**
+- Bouton "Créer compte serveur" → signup avec rôle `waiter` auto-assigné via trigger
+- Après login, redirection automatique selon rôle :
+  - waiter → `/waiter`
+  - kitchen → `/kitchen`
+  - admin/cashier → `/admin`
 
-**Expanded Menu (DB seed)**
-- All categories from the brief: Crêpes, Juices, Mojitos, Ice Cream, Hot/Cold Drinks, Desserts (~50 products with realistic prices in MAD)
+## 3. Écran Cuisine temps réel (`/kitchen`)
+- 3 colonnes : **En attente · En préparation · Prêt**
+- Supabase Realtime sur `orders` + `order_items`
+- Click sur carte → avance le statut (pending → preparing → ready → delivered)
+- Son de notification quand nouvelle commande arrive
+- Affiche : N° commande, table, items + qty + notes, temps écoulé (chrono live)
+- Pas de prix (focus cuisine)
 
-**Dual Ticket Printing System**
-- `src/lib/printing.ts`: `printKitchenTicket()` and `printCustomerReceipt()`
-- Kitchen ticket: monochrome, no prices, big fonts, order#, table, waiter, items+qty+notes, time
-- Customer receipt: logo, items, prices, tax, total, payment method, QR code (order id), thank-you, socials, scrollable preview, thermal-optimized print CSS (80mm)
-- Auto-print both on checkout from POS
+## 4. Dashboard Serveur (`/waiter`)
+- Stats perso : commandes actives, terminées aujourd'hui, CA généré, pourboires
+- Liste commandes assignées avec statut live
+- Bouton "Nouvelle commande" → ouvre `/pos` avec `waiter_id` auto
+- Vue "À servir" (orders status=ready de ses tables)
 
-## Phase 2 — Smart POS, Kitchen Display, Waiter Dashboard
+## 5. Orders : modal détails + reprint
+- Sur `/orders` : bouton **"Voir"** sur chaque ligne → modal avec :
+  - Tous les items, qty, prix, notes
+  - Total, paiement, table, serveur, date
+  - 2 boutons : **"Imprimer ticket client"** + **"Imprimer ticket cuisine"**
+  - Bouton "Annuler commande" (soft delete, admin only)
 
-- Rebuild `/pos` with category filter, search, cart, qty, item notes, discount, tax, split/cash/card, customer name + table, assigned waiter (current user)
-- `/kitchen`: realtime board (Supabase Realtime) showing pending → preparing → ready columns, drag/click to advance, no prices
-- `/waiter`: waiter's own dashboard — active orders, completed today, revenue generated, tips, avg service time
-- `/orders`: filters (date, waiter, status), modify/cancel/restore (soft delete), reprint receipt, export CSV
+## 6. Admin CRUD Produits (`/admin/products`)
+- Table avec recherche, filtre catégorie
+- Bouton "Ajouter produit" → modal (nom, catégorie, prix, prix promo, description, ingrédients, allergènes, stock, temps prép, calories, image upload, disponible)
+- Edit / Duplicate / Delete (admin only via RLS)
+- Upload images vers bucket Supabase Storage `product-images`
 
-## Phase 3 — Admin Suite, Analytics, AI, Product/Staff Management
+## 7. Admin Analytics avancées (`/admin/analytics`)
+- KPI cards : CA jour/semaine/mois/année, nb commandes, panier moyen, top serveur
+- Recharts : ligne CA 30 jours, bar top 10 produits, pie répartition catégories, heatmap heures de pointe
+- Leaderboard serveurs (CA, nb commandes, pourboires)
+- Export CSV
 
-- `/admin` dashboard: KPI cards (today/week/month/year revenue, orders, AOV), Recharts (line/bar/pie), top/low products, peak hours heatmap, waiter leaderboard
-- `/admin/products`: CRUD with image upload (Supabase Storage bucket `product-images`), categories, stock, promo, availability, duplicate
-- `/admin/staff`: CRUD waiters/staff (invite, assign role, suspend, performance metrics, login history)
-- `/admin/audit`: activity log table
-- **AI Assistant** (`/admin/ai` + customer-facing chat widget) using Lovable AI Gateway (`google/gemini-3-flash-preview`):
-  - Server function `src/lib/ai.functions.ts` with tools: `getRevenue`, `getTopProducts`, `getSlowProducts`, `getWaiterStats`, `recommendProduct`
-  - Customer widget: recommend products, explain ingredients, FR/AR/EN
-  - Admin chat: business analysis, anomaly detection, suggested promos
+## 8. AI Assistant (`/admin/ai` + widget mobile)
+- Lovable AI Gateway (`google/gemini-3-flash-preview`)
+- Server function `src/lib/ai.functions.ts` avec tools : `getRevenue`, `getTopProducts`, `getSlowProducts`, `getWaiterStats`
+- Widget chat flottant sur admin + client (recommandations produits, multilingue)
+- Vercel AI SDK + `useChat`
 
-## UI / Design
-- Keep luxury sand+chocolate theme; add glassmorphism panels, premium dashboard layout (sidebar + topbar), shadcn cards/tables/charts, smooth Framer-style transitions via CSS
+## 9. POS Mobile-first
+- POS responsive : grid produits 2 cols sur mobile, panier en drawer bas
+- Boutons gros, touch-friendly
+- Sélecteur de langue ticket avant checkout
+- Tout fonctionne identique au desktop
 
-## Tech notes
-- TanStack Start route files only (no React Router)
-- Supabase Realtime for orders/kitchen
-- All secrets server-side; RLS enforced everywhere
-- Receipts use a hidden print container + `window.print()` with `@media print` thermal CSS
+## 10. Schéma DB ajouts
+- Trigger : auto-assign rôle `waiter` au signup (sauf si déjà admin)
+- Storage bucket `product-images` (public read, admin write)
+- Realtime publication sur `orders` + `order_items`
 
----
+## Ordre d'exécution (1 seule passe)
+1. Migration DB (storage bucket, realtime, trigger waiter, fix RLS si besoin)
+2. `src/lib/i18n.ts` + `LanguageSwitcher`
+3. Refacto `printing.ts` — accepte `lang` param
+4. `/auth` — onglets + signup serveur
+5. `/kitchen` — realtime board
+6. `/waiter` — dashboard perso
+7. `/orders` — modal détails + reprint
+8. `/admin/products` — CRUD complet
+9. `/admin/analytics` — Recharts + KPIs
+10. `/admin/ai` + chat widget — Lovable AI
+11. `/pos` — mobile responsive + sélecteur langue ticket
+12. Update `/admin` tiles avec liens fonctionnels
 
-**Reply "go" to start Phase 1** (or tell me which phase/feature to prioritize first if you want a different order). Phase 1 alone is already a large migration + auth + printing system + ~50 seeded products.
+C'est gros mais cohérent. Je fais tout dans cette boucle. Dis "go" et je démarre par la migration DB.
