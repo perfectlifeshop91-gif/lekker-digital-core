@@ -12,6 +12,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { toast } from "sonner";
 import { getProductImage } from "@/lib/product-images";
 import { printBoth, printCustomerReceipt, printKitchenTicket, type ReceiptData } from "@/lib/printing";
+import { LANGS, type Lang } from "@/lib/i18n";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import logo from "@/assets/lekker-logo.jpg";
 
 export const Route = createFileRoute("/pos")({
