@@ -13,6 +13,7 @@ import { Route as WaiterRouteImport } from './routes/waiter'
 import { Route as PosRouteImport } from './routes/pos'
 import { Route as OrdersRouteImport } from './routes/orders'
 import { Route as KitchenRouteImport } from './routes/kitchen'
+import { Route as CashierRouteImport } from './routes/cashier'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
@@ -38,6 +39,11 @@ const OrdersRoute = OrdersRouteImport.update({
 const KitchenRoute = KitchenRouteImport.update({
   id: '/kitchen',
   path: '/kitchen',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CashierRoute = CashierRouteImport.update({
+  id: '/cashier',
+  path: '/cashier',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -75,6 +81,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRoute
+  '/cashier': typeof CashierRoute
   '/kitchen': typeof KitchenRoute
   '/orders': typeof OrdersRoute
   '/pos': typeof PosRoute
@@ -87,6 +94,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRoute
+  '/cashier': typeof CashierRoute
   '/kitchen': typeof KitchenRoute
   '/orders': typeof OrdersRoute
   '/pos': typeof PosRoute
@@ -100,6 +108,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRoute
+  '/cashier': typeof CashierRoute
   '/kitchen': typeof KitchenRoute
   '/orders': typeof OrdersRoute
   '/pos': typeof PosRoute
@@ -114,6 +123,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/auth'
+    | '/cashier'
     | '/kitchen'
     | '/orders'
     | '/pos'
@@ -126,6 +136,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/auth'
+    | '/cashier'
     | '/kitchen'
     | '/orders'
     | '/pos'
@@ -138,6 +149,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/auth'
+    | '/cashier'
     | '/kitchen'
     | '/orders'
     | '/pos'
@@ -151,6 +163,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
   AuthRoute: typeof AuthRoute
+  CashierRoute: typeof CashierRoute
   KitchenRoute: typeof KitchenRoute
   OrdersRoute: typeof OrdersRoute
   PosRoute: typeof PosRoute
@@ -186,6 +199,13 @@ declare module '@tanstack/react-router' {
       path: '/kitchen'
       fullPath: '/kitchen'
       preLoaderRoute: typeof KitchenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cashier': {
+      id: '/cashier'
+      path: '/cashier'
+      fullPath: '/cashier'
+      preLoaderRoute: typeof CashierRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -249,6 +269,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
   AuthRoute: AuthRoute,
+  CashierRoute: CashierRoute,
   KitchenRoute: KitchenRoute,
   OrdersRoute: OrdersRoute,
   PosRoute: PosRoute,

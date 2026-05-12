@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, ShoppingCart, History, LogOut, Users, Package, ChefHat, Sparkles } from "lucide-react";
+import { LayoutDashboard, ShoppingCart, History, LogOut, Users, Package, ChefHat, Sparkles, Wallet } from "lucide-react";
 import { toast } from "sonner";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { AIChatWidget } from "@/components/AIChatWidget";
@@ -39,8 +39,9 @@ function AdminHome() {
 
   const tiles = [
     { to: "/pos", label: "Caisse / POS", desc: "Encaissement & impression", icon: ShoppingCart, color: "from-amber-500/20 to-amber-700/10" },
-    { to: "/kitchen", label: "Cuisine Live", desc: "Écran cuisine temps réel", icon: ChefHat, color: "from-rose-500/20 to-rose-700/10" },
-    { to: "/waiter", label: "Espace Serveur", desc: "Tableau de bord serveur", icon: Users, color: "from-purple-500/20 to-purple-700/10" },
+    { to: "/kitchen", label: "Dashboard Cuisinier", desc: "Écran cuisine temps réel", icon: ChefHat, color: "from-rose-500/20 to-rose-700/10" },
+    { to: "/waiter", label: "Dashboard Serveur", desc: "Espace serveur & pourboires", icon: Users, color: "from-purple-500/20 to-purple-700/10" },
+    { to: "/cashier", label: "Dashboard Caissier", desc: "Encaissement & paiements", icon: Wallet, color: "from-yellow-500/20 to-yellow-700/10" },
     { to: "/orders", label: "Commandes", desc: "Historique & gestion", icon: History, color: "from-blue-500/20 to-blue-700/10" },
     { to: "/admin/products", label: "Produits", desc: "CRUD du menu", icon: Package, color: "from-emerald-500/20 to-emerald-700/10" },
     { to: "/admin/analytics", label: "Analytics", desc: "Stats & graphiques", icon: LayoutDashboard, color: "from-cyan-500/20 to-cyan-700/10" },
