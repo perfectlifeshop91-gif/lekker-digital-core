@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Plus, Minus, Trash2, Receipt, Printer, ShoppingCart, ArrowLeft, History, StickyNote } from "lucide-react";
+import { Plus, Minus, Trash2, Receipt, Printer, ShoppingCart, ArrowLeft, History, StickyNote, Globe } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,8 +8,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "sonner";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { getProductImage } from "@/lib/product-images";
 import { printBoth, printCustomerReceipt, printKitchenTicket, type ReceiptData } from "@/lib/printing";
 import { LANGS, type Lang } from "@/lib/i18n";
