@@ -145,23 +145,133 @@ function POSPage() {
     }
   }, [ticket]);
 
+  const cartCount = cart.reduce((s, i) => s + i.qty, 0);
+
+  const cartPanel = (
+    <>
+      <div className="mb-3 flex items-center justify-between">
+        <h2 className="flex items-center gap-2 font-serif text-xl font-semibold">
+          <ShoppingCart className="h-5 w-5" /> Panier
+        </h2>
+        {cart.length > 0 && (
+          <Button variant="ghost" size="sm" onClick={clearCart}><Trash2 className="h-4 w-4" /></Button>
+        )}
+      </div>
+      <div className="max-h-[35vh] space-y-2 overflow-auto">
+        {cart.length === 0 && (
+          <div className="py-8 text-center text-sm text-muted-foreground">Cliquez sur un produit pour l'ajouter</div>
+        )}
+        {cart.map(i => (
+          <div key={i.product.id} className="rounded-lg border border-border p-2">
+            <div className="flex items-center gap-2">
+              <img src={getProductImage(i.product.name, i.product.category)} className="h-12 w-12 rounded object-cover" alt="" />
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-sm font-medium">{i.product.name}</div>
+                <div className="text-xs text-muted-foreground">{i.product.price} DH</div>
+              </div>
+              <div className="flex items-center gap-1">
+                <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => updateQty(i.product.id, -1)}><Minus className="h-3 w-3" /></Button>
+                <span className="w-6 text-center text-sm font-medium">{i.qty}</span>
+                <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => updateQty(i.product.id, 1)}><Plus className="h-3 w-3" /></Button>
+              </div>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button className={`rounded p-1 ${i.notes ? "text-primary" : "text-muted-foreground"} hover:bg-muted`}>
+                    <StickyNote className="h-3.5 w-3.5" />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-64">
+                  <Label className="text-xs">Note pour la cuisine</Label>
+                  <Textarea rows={2} value={i.notes ?? ""} onChange={e => setItemNotes(i.product.id, e.target.value)} placeholder="Sans sucre, extra…" />
+                </PopoverContent>
+              </Popover>
+              <button onClick={() => removeItem(i.product.id)} className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-destructive">
+                <Trash2 className="h-3.5 w-3.5" />
+              </button>
+            </div>
+            {i.notes && <div className="mt-1 truncate pl-14 text-xs italic text-primary">★ {i.notes}</div>}
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-4 space-y-2 border-t border-border pt-3">
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <Label className="text-xs">Table</Label>
+            <Input value={tableNumber} onChange={e => setTableNumber(e.target.value)} placeholder="N°" />
+          </div>
+          <div>
+            <Label className="text-xs">Client</Label>
+            <Input value={customer} onChange={e => setCustomer(e.target.value)} placeholder="Nom" />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <Label className="text-xs">Paiement</Label>
+            <Select value={payment} onValueChange={setPayment}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="cash">Espèces</SelectItem>
+                <SelectItem value="card">Carte</SelectItem>
+                <SelectItem value="transfer">Virement</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label className="text-xs">Remise (DH)</Label>
+            <Input type="number" min={0} value={discount} onChange={e => setDiscount(+e.target.value || 0)} />
+          </div>
+        </div>
+        <div>
+          <Label className="text-xs flex items-center gap-1"><Globe className="h-3 w-3" /> Langue du ticket client</Label>
+          <Select value={ticketLang} onValueChange={(v) => setTicketLang(v as Lang)}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {LANGS.map(l => (
+                <SelectItem key={l.code} value={l.code}>{l.flag} {l.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <Label className="text-xs">Notes générales</Label>
+          <Textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} placeholder="Allergies, à emporter…" />
+        </div>
+      </div>
+
+      <div className="mt-3 space-y-1 border-t border-border pt-3 text-sm">
+        <div className="flex justify-between"><span className="text-muted-foreground">Sous-total</span><span>{subtotal.toFixed(2)} DH</span></div>
+        {discountAmt > 0 && <div className="flex justify-between text-destructive"><span>Remise</span><span>-{discountAmt.toFixed(2)} DH</span></div>}
+        {TAX_RATE > 0 && <div className="flex justify-between"><span className="text-muted-foreground">TVA</span><span>{tax.toFixed(2)} DH</span></div>}
+        <div className="flex justify-between text-lg font-bold"><span>Total</span><span className="text-primary">{total.toFixed(2)} DH</span></div>
+      </div>
+
+      <Button onClick={checkout} className="mt-3 w-full" size="lg" disabled={cart.length === 0}>
+        <Receipt className="mr-2 h-4 w-4" /> Encaisser & Imprimer
+      </Button>
+    </>
+  );
+
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-background text-foreground pb-24 lg:pb-0">
       <header className="sticky top-0 z-10 border-b border-border bg-card/80 backdrop-blur">
-        <div className="flex items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-3">
-            <Link to="/" className="rounded-md p-2 hover:bg-muted"><ArrowLeft className="h-4 w-4" /></Link>
-            <img src={logo} alt="LEKKER" className="h-9 w-9 rounded-full object-cover" />
-            <div>
-              <div className="font-serif text-lg font-semibold">LEKKER · Caisse</div>
-              <div className="text-xs text-muted-foreground">Point of Sale</div>
+        <div className="flex items-center justify-between px-3 py-3 sm:px-4">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            <Link to="/" className="rounded-md p-2 hover:bg-muted shrink-0"><ArrowLeft className="h-4 w-4" /></Link>
+            <img src={logo} alt="LEKKER" className="h-9 w-9 rounded-full object-cover shrink-0" />
+            <div className="min-w-0">
+              <div className="font-serif text-base sm:text-lg font-semibold truncate">LEKKER · Caisse</div>
+              <div className="hidden sm:block text-xs text-muted-foreground">Point of Sale</div>
             </div>
           </div>
-          <Link to="/orders"><Button variant="outline" size="sm"><History className="mr-2 h-4 w-4" />Historique</Button></Link>
+          <div className="flex items-center gap-1 sm:gap-2">
+            <LanguageSwitcher />
+            <Link to="/orders"><Button variant="outline" size="sm"><History className="h-4 w-4 sm:mr-2" /><span className="hidden sm:inline">Historique</span></Button></Link>
+          </div>
         </div>
       </header>
 
-      <div className="grid grid-cols-1 gap-4 p-4 lg:grid-cols-[1fr_400px]">
+      <div className="grid grid-cols-1 gap-4 p-3 sm:p-4 lg:grid-cols-[1fr_400px]">
         <section>
           <div className="mb-3 flex flex-wrap items-center gap-2">
             <Input placeholder="Rechercher un produit…" value={search} onChange={e => setSearch(e.target.value)} className="max-w-xs" />
@@ -179,9 +289,9 @@ function POSPage() {
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
               {filtered.map(p => (
                 <button key={p.id} onClick={() => addToCart(p)}
-                  className="group overflow-hidden rounded-xl border border-border bg-card text-left shadow-sm transition hover:shadow-lg hover:-translate-y-0.5">
+                  className="group overflow-hidden rounded-xl border border-border bg-card text-left shadow-sm transition active:scale-95 hover:shadow-lg hover:-translate-y-0.5">
                   <div className="aspect-square overflow-hidden bg-muted">
-                    <img src={getProductImage(p.name, p.category)} alt={p.name}
+                    <img src={getProductImage(p.name, p.category)} alt={p.name} loading="lazy"
                       className="h-full w-full object-cover transition group-hover:scale-105" />
                   </div>
                   <div className="p-2.5">
@@ -200,98 +310,35 @@ function POSPage() {
           )}
         </section>
 
-        <aside className="sticky top-20 h-fit rounded-xl border border-border bg-card p-4 shadow-sm">
-          <div className="mb-3 flex items-center justify-between">
-            <h2 className="flex items-center gap-2 font-serif text-xl font-semibold">
-              <ShoppingCart className="h-5 w-5" /> Panier
-            </h2>
-            {cart.length > 0 && (
-              <Button variant="ghost" size="sm" onClick={clearCart}><Trash2 className="h-4 w-4" /></Button>
-            )}
-          </div>
-          <div className="max-h-[40vh] space-y-2 overflow-auto">
-            {cart.length === 0 && (
-              <div className="py-8 text-center text-sm text-muted-foreground">Cliquez sur un produit pour l'ajouter</div>
-            )}
-            {cart.map(i => (
-              <div key={i.product.id} className="rounded-lg border border-border p-2">
-                <div className="flex items-center gap-2">
-                  <img src={getProductImage(i.product.name, i.product.category)} className="h-12 w-12 rounded object-cover" alt="" />
-                  <div className="min-w-0 flex-1">
-                    <div className="truncate text-sm font-medium">{i.product.name}</div>
-                    <div className="text-xs text-muted-foreground">{i.product.price} DH</div>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Button size="icon" variant="outline" className="h-7 w-7" onClick={() => updateQty(i.product.id, -1)}><Minus className="h-3 w-3" /></Button>
-                    <span className="w-6 text-center text-sm font-medium">{i.qty}</span>
-                    <Button size="icon" variant="outline" className="h-7 w-7" onClick={() => updateQty(i.product.id, 1)}><Plus className="h-3 w-3" /></Button>
-                  </div>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <button className={`rounded p-1 ${i.notes ? "text-primary" : "text-muted-foreground"} hover:bg-muted`}>
-                        <StickyNote className="h-3.5 w-3.5" />
-                      </button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-64">
-                      <Label className="text-xs">Note pour la cuisine</Label>
-                      <Textarea rows={2} value={i.notes ?? ""} onChange={e => setItemNotes(i.product.id, e.target.value)} placeholder="Sans sucre, extra…" />
-                    </PopoverContent>
-                  </Popover>
-                  <button onClick={() => removeItem(i.product.id)} className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-destructive">
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-                {i.notes && <div className="mt-1 truncate pl-14 text-xs italic text-primary">★ {i.notes}</div>}
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-4 space-y-2 border-t border-border pt-3">
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <Label className="text-xs">Table</Label>
-                <Input value={tableNumber} onChange={e => setTableNumber(e.target.value)} placeholder="N°" />
-              </div>
-              <div>
-                <Label className="text-xs">Client</Label>
-                <Input value={customer} onChange={e => setCustomer(e.target.value)} placeholder="Nom" />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <Label className="text-xs">Paiement</Label>
-                <Select value={payment} onValueChange={setPayment}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="cash">Espèces</SelectItem>
-                    <SelectItem value="card">Carte</SelectItem>
-                    <SelectItem value="transfer">Virement</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label className="text-xs">Remise (DH)</Label>
-                <Input type="number" min={0} value={discount} onChange={e => setDiscount(+e.target.value || 0)} />
-              </div>
-            </div>
-            <div>
-              <Label className="text-xs">Notes générales</Label>
-              <Textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} placeholder="Allergies, à emporter…" />
-            </div>
-          </div>
-
-          <div className="mt-3 space-y-1 border-t border-border pt-3 text-sm">
-            <div className="flex justify-between"><span className="text-muted-foreground">Sous-total</span><span>{subtotal.toFixed(2)} DH</span></div>
-            {discountAmt > 0 && <div className="flex justify-between text-destructive"><span>Remise</span><span>-{discountAmt.toFixed(2)} DH</span></div>}
-            {TAX_RATE > 0 && <div className="flex justify-between"><span className="text-muted-foreground">TVA</span><span>{tax.toFixed(2)} DH</span></div>}
-            <div className="flex justify-between text-lg font-bold"><span>Total</span><span className="text-primary">{total.toFixed(2)} DH</span></div>
-          </div>
-
-          <Button onClick={checkout} className="mt-3 w-full" size="lg" disabled={cart.length === 0}>
-            <Receipt className="mr-2 h-4 w-4" /> Encaisser & Imprimer
-          </Button>
+        {/* Desktop cart panel */}
+        <aside className="sticky top-20 h-fit hidden lg:block rounded-xl border border-border bg-card p-4 shadow-sm">
+          {cartPanel}
         </aside>
       </div>
+
+      {/* Mobile floating cart button + drawer */}
+      {isMobile && (
+        <Drawer open={cartOpen} onOpenChange={setCartOpen}>
+          <DrawerTrigger asChild>
+            <Button
+              size="lg"
+              className="fixed bottom-4 left-4 right-4 z-30 h-14 rounded-2xl shadow-xl"
+              disabled={cart.length === 0 && !cartOpen}
+            >
+              <ShoppingCart className="mr-2 h-5 w-5" />
+              {cart.length === 0 ? "Panier vide" : `Voir le panier · ${cartCount} article${cartCount > 1 ? "s" : ""} · ${total.toFixed(2)} DH`}
+            </Button>
+          </DrawerTrigger>
+          <DrawerContent className="max-h-[92vh]">
+            <DrawerHeader className="pb-2">
+              <DrawerTitle className="sr-only">Panier</DrawerTitle>
+            </DrawerHeader>
+            <div className="overflow-y-auto px-4 pb-6">
+              {cartPanel}
+            </div>
+          </DrawerContent>
+        </Drawer>
+      )}
 
       <Dialog open={!!ticket} onOpenChange={o => !o && setTicket(null)}>
         <DialogContent className="max-w-md">
