@@ -128,9 +128,11 @@ function POSPage() {
       payment, tableNumber, customer, notes,
       date: new Date(order.created_at),
       logoUrl: window.location.origin + logo,
+      lang: ticketLang,
     };
     setTicket(receipt);
     printedOnce.current = false;
+    setCartOpen(false);
     clearCart();
   };
 
