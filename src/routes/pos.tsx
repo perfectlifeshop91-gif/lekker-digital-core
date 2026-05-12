@@ -39,6 +39,7 @@ const CATS = [
 ];
 
 function POSPage() {
+  const isMobile = useIsMobile();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [cat, setCat] = useState("all");
@@ -49,6 +50,8 @@ function POSPage() {
   const [customer, setCustomer] = useState("");
   const [notes, setNotes] = useState("");
   const [discount, setDiscount] = useState(0);
+  const [ticketLang, setTicketLang] = useState<Lang>("fr");
+  const [cartOpen, setCartOpen] = useState(false);
   const [ticket, setTicket] = useState<ReceiptData | null>(null);
   const printedOnce = useRef(false);
 
