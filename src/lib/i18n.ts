@@ -58,6 +58,26 @@ export const T: Dict = {
   checkout: { fr: "Encaisser & Imprimer", ar: "الدفع والطباعة", ber: "Xelles & Siggeḍ", en: "Checkout & Print", es: "Pagar e Imprimir" },
   search: { fr: "Rechercher…", ar: "بحث…", ber: "Nadi…", en: "Search…", es: "Buscar…" },
   all: { fr: "Tout", ar: "الكل", ber: "Akk", en: "All", es: "Todo" },
+  // Home page
+  home_menu: { fr: "Menu", ar: "القائمة", ber: "Umuɣ", en: "Menu", es: "Menú" },
+  home_about: { fr: "À propos", ar: "عن", ber: "Ɣef", en: "About", es: "Acerca" },
+  home_experience: { fr: "Expérience", ar: "تجربة", ber: "Tirmit", en: "Experience", es: "Experiencia" },
+  home_contact: { fr: "Contact", ar: "تواصل", ber: "Anermes", en: "Contact", es: "Contacto" },
+  home_order: { fr: "Commander", ar: "اطلب الآن", ber: "Suter", en: "Order Now", es: "Pedir" },
+  home_pos: { fr: "Caisse", ar: "الصندوق", ber: "Tasenduqt", en: "POS", es: "Caja" },
+  home_tagline: { fr: "Un goût ♡ bonheur", ar: "مذاق ♡ السعادة", ber: "Aẓri ♡ n lferḥ", en: "A taste ♡ of happiness", es: "Un sabor ♡ de felicidad" },
+  home_hero1: { fr: "Une expérience crêpe", ar: "تجربة كريب", ber: "Tirmit n krip", en: "A crêpe experience", es: "Una experiencia crêpe" },
+  home_hero2: { fr: "au-delà des attentes.", ar: "تفوق التوقعات.", ber: "ugar i wayen tettrajiḍ.", en: "beyond expectations.", es: "más allá de las expectativas." },
+  home_hero_desc: {
+    fr: "Chaque détail est soigné avec amour, patience et passion — pour vous offrir le meilleur. Crêpes, jus, mojitos & glaces artisanales.",
+    ar: "كل تفصيل مصنوع بحب وصبر وشغف لتقديم الأفضل. كريب، عصائر، موهيتو وآيس كريم.",
+    ber: "Yal taɣawsa s tayri d uṣebber — i kenwi kan ifulkin. Krip, lɛaṣir, mojito d glas.",
+    en: "Every detail crafted with love, care and patience — so you get nothing but the best. Crêpes, juices, mojitos & artisan ice cream.",
+    es: "Cada detalle elaborado con amor, cuidado y paciencia — para ofrecerle lo mejor. Crêpes, zumos, mojitos y helados artesanales.",
+  },
+  home_explore: { fr: "Explorer le menu", ar: "استكشف القائمة", ber: "Snirem umuɣ", en: "Explore the Menu", es: "Explorar el menú" },
+  home_story_title: { fr: "Notre histoire", ar: "قصتنا", ber: "Tadyant nneɣ", en: "Our Story", es: "Nuestra historia" },
+  home_visit: { fr: "Venez nous voir", ar: "تفضلوا بزيارتنا", ber: "Ɛiwed-aɣ-d", en: "Come say hello", es: "Ven a saludarnos" },
 };
 
 const KEY = "lekker.lang";

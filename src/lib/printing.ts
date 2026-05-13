@@ -127,7 +127,7 @@ export function printCustomerReceipt(d: ReceiptData) {
     </div>
     <div class="sep"></div>
     <div class="ctr small">
-      📷 @lekker___1<br/>
+      📷 instagram.com/lekker___1<br/>
       📍 Al Hoceima, Morocco
     </div>
   `;

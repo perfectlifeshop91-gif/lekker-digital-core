@@ -1,7 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { Heart, Instagram, Mail, MapPin, Sparkles, Star, Leaf, Clock, Receipt } from "lucide-react";
+import { Heart, Instagram, Mail, MapPin, Sparkles, Star, Leaf, Clock, Receipt, LogIn } from "lucide-react";
 import logo from "@/assets/lekker-logo.jpg";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { useLang } from "@/lib/i18n";
 import crepeChoco from "@/assets/crepe-chocolate.jpg";
 import crepePistachio from "@/assets/crepe-pistachio.jpg";
 import juiceStrawberry from "@/assets/juice-strawberry.jpg";
@@ -85,31 +87,33 @@ const categories: { id: string; label: string; icon: string; items: Product[] }[
 function Index() {
   const [active, setActive] = useState("crepes");
   const current = categories.find((c) => c.id === active)!;
+  const { t, dir } = useLang();
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-background text-foreground" dir={dir}>
       {/* NAV */}
       <header className="sticky top-0 z-50 backdrop-blur-xl bg-background/70 border-b border-border/40">
-        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-          <a href="#top" className="flex items-center gap-3">
-            <img src={logo} alt="LEKKER" className="h-12 w-12 rounded-full object-cover ring-2 ring-primary/20" />
-            <div className="leading-tight">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 h-20 flex items-center justify-between gap-2">
+          <a href="#top" className="flex items-center gap-3 min-w-0">
+            <img src={logo} alt="LEKKER" className="h-12 w-12 rounded-full object-cover ring-2 ring-primary/20 shrink-0" />
+            <div className="leading-tight min-w-0">
               <div className="text-2xl font-semibold tracking-tight" style={{ fontFamily: "'Cormorant Garamond',serif" }}>Lekker</div>
-              <div className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">Un goût ♡ bonheur</div>
+              <div className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground truncate">{t("home_tagline")}</div>
             </div>
           </a>
           <nav className="hidden md:flex items-center gap-8 text-sm">
-            <a href="#menu" className="hover:text-primary transition-colors">Menu</a>
-            <a href="#about" className="hover:text-primary transition-colors">About</a>
-            <a href="#story" className="hover:text-primary transition-colors">Experience</a>
-            <a href="#contact" className="hover:text-primary transition-colors">Contact</a>
+            <a href="#menu" className="hover:text-primary transition-colors">{t("home_menu")}</a>
+            <a href="#about" className="hover:text-primary transition-colors">{t("home_about")}</a>
+            <a href="#story" className="hover:text-primary transition-colors">{t("home_experience")}</a>
+            <a href="#contact" className="hover:text-primary transition-colors">{t("home_contact")}</a>
           </nav>
-          <div className="hidden md:flex items-center gap-2">
-            <Link to="/pos" className="inline-flex items-center gap-2 border border-primary/30 px-4 py-2.5 rounded-full text-sm font-medium hover:bg-card transition">
-              <Receipt className="w-4 h-4" /> Caisse
+          <div className="flex items-center gap-2">
+            <LanguageSwitcher />
+            <Link to="/auth" className="inline-flex items-center gap-1.5 border border-primary/30 px-3 py-2 rounded-full text-xs sm:text-sm font-medium hover:bg-card transition">
+              <LogIn className="w-3.5 h-3.5" /> Staff
             </Link>
-            <a href="#menu" className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 rounded-full text-sm font-medium hover:opacity-90 transition shadow-soft">
-              <Heart className="w-4 h-4" /> Order Now
+            <a href="#menu" className="hidden sm:inline-flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-full text-sm font-medium hover:opacity-90 transition shadow-soft">
+              <Heart className="w-4 h-4" /> {t("home_order")}
             </a>
           </div>
         </div>
@@ -278,10 +282,10 @@ function Index() {
               <div className="text-xs uppercase tracking-widest text-muted-foreground mt-3">Location</div>
               <div className="font-medium mt-1">Al Hoceima, Morocco</div>
             </div>
-            <a href="https://instagram.com" target="_blank" rel="noreferrer" className="p-6 rounded-2xl bg-card border border-border hover:shadow-soft transition">
+            <a href="https://www.instagram.com/lekker___1" target="_blank" rel="noreferrer" className="p-6 rounded-2xl bg-card border border-border hover:shadow-soft transition">
               <Instagram className="w-5 h-5 text-primary" />
               <div className="text-xs uppercase tracking-widest text-muted-foreground mt-3">Instagram</div>
-              <div className="font-medium mt-1">@lekker.hcm</div>
+              <div className="font-medium mt-1">@lekker___1</div>
             </a>
           </div>
         </div>
