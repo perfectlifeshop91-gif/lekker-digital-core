@@ -1,12 +1,14 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowLeft, Receipt, ShoppingCart, TrendingUp, Eye, Printer, X } from "lucide-react";
+import { Receipt, ShoppingCart, TrendingUp, Eye, Printer, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { printCustomerReceipt, printKitchenTicket, type ReceiptData } from "@/lib/printing";
 import { toast } from "sonner";
 import logo from "@/assets/lekker-logo.jpg";
+import { StaffNav } from "@/components/StaffNav";
+import { useRouteGuard } from "@/lib/roles";
 
 export const Route = createFileRoute("/orders")({
   component: OrdersPage,
@@ -21,21 +23,12 @@ type Order = {
 type Item = { id: string; name: string; price: number; quantity: number; subtotal: number; notes: string | null };
 
 function OrdersPage() {
-  const nav = useNavigate();
+  const guard = useRouteGuard("/orders");
+  const isAdmin = guard.isAdmin;
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Order | null>(null);
   const [items, setItems] = useState<Item[]>([]);
-  const [isAdmin, setIsAdmin] = useState(false);
-
-  useEffect(() => {
-    (async () => {
-      const { data: s } = await supabase.auth.getSession();
-      if (!s.session) return nav({ to: "/auth" });
-      const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", s.session.user.id);
-      setIsAdmin((roles ?? []).some(r => r.role === "admin"));
-    })();
-  }, [nav]);
 
   const reload = async () => {
     setLoading(true);
@@ -79,16 +72,7 @@ function OrdersPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-10 border-b border-border bg-card/80 backdrop-blur">
-        <div className="flex items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-3">
-            <Link to="/admin" className="rounded-md p-2 hover:bg-muted"><ArrowLeft className="h-4 w-4" /></Link>
-            <img src={logo} alt="LEKKER" className="h-9 w-9 rounded-full object-cover" />
-            <div className="font-serif text-lg font-semibold">Historique</div>
-          </div>
-          <Link to="/pos"><Button size="sm"><Receipt className="mr-2 h-4 w-4" />Caisse</Button></Link>
-        </div>
-      </header>
+      <StaffNav title="Historique des commandes" />
 
       <div className="mx-auto max-w-6xl space-y-4 p-4">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">

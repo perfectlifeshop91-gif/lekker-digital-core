@@ -1,12 +1,14 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, LogOut, ShoppingCart, TrendingUp, Receipt, Wallet, CreditCard, Building2, Printer, Eye } from "lucide-react";
+import { ShoppingCart, TrendingUp, Receipt, Wallet, CreditCard, Printer, Eye } from "lucide-react";
 import logo from "@/assets/lekker-logo.jpg";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { printCustomerReceipt, printKitchenTicket, type ReceiptData } from "@/lib/printing";
+import { StaffNav } from "@/components/StaffNav";
+import { useRouteGuard } from "@/lib/roles";
 
 export const Route = createFileRoute("/cashier")({
   component: CashierPage,
@@ -21,20 +23,11 @@ type Order = {
 type Item = { id: string; name: string; price: number; quantity: number; notes: string | null };
 
 function CashierPage() {
-  const nav = useNavigate();
-  const [name, setName] = useState("");
+  const guard = useRouteGuard("/cashier");
+  const name = guard.fullName ?? guard.email ?? "Caissier";
   const [orders, setOrders] = useState<Order[]>([]);
   const [selected, setSelected] = useState<Order | null>(null);
   const [items, setItems] = useState<Item[]>([]);
-
-  useEffect(() => {
-    (async () => {
-      const { data } = await supabase.auth.getSession();
-      if (!data.session) return nav({ to: "/auth" });
-      const { data: profile } = await supabase.from("profiles").select("full_name").eq("id", data.session.user.id).maybeSingle();
-      setName(profile?.full_name ?? data.session.user.email ?? "Caissier");
-    })();
-  }, [nav]);
 
   useEffect(() => {
     const load = async () => {
@@ -80,26 +73,9 @@ function CashierPage() {
   const transfer = todays.filter(o => o.payment_method === "transfer").reduce((s, o) => s + Number(o.total), 0);
   const unpaid = orders.filter(o => ["pending", "preparing", "ready", "delivered"].includes(o.status));
 
-  const logout = async () => { await supabase.auth.signOut(); nav({ to: "/auth" }); };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/30">
-      <header className="sticky top-0 z-10 border-b border-border bg-card/80 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-3">
-            <Link to="/" className="rounded-md p-2 hover:bg-muted"><ArrowLeft className="h-4 w-4" /></Link>
-            <img src={logo} className="h-9 w-9 rounded-full object-cover" alt="" />
-            <div>
-              <div className="font-serif text-lg font-semibold">Bonjour, {name}</div>
-              <div className="text-xs text-muted-foreground">Espace Caissier</div>
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <Link to="/pos"><Button size="sm"><Receipt className="mr-2 h-4 w-4" />Caisse</Button></Link>
-            <Button variant="outline" size="sm" onClick={logout}><LogOut className="h-4 w-4" /></Button>
-          </div>
-        </div>
-      </header>
+      <StaffNav title={`Caissier · ${name}`} />
 
       <main className="mx-auto max-w-6xl space-y-5 p-4">
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">

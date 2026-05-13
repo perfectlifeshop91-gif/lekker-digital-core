@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -8,9 +8,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ArrowLeft, Plus, Pencil, Trash2, Copy, Search, Upload } from "lucide-react";
+import { Plus, Pencil, Trash2, Copy, Search, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { getProductImage } from "@/lib/product-images";
+import { StaffNav } from "@/components/StaffNav";
+import { useRouteGuard } from "@/lib/roles";
 
 export const Route = createFileRoute("/admin/products")({
   component: ProductsPage,
@@ -31,7 +33,7 @@ function emptyProduct(): Partial<Product> {
 }
 
 function ProductsPage() {
-  const nav = useNavigate();
+  const guard = useRouteGuard("/admin/products");
   const [list, setList] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -39,18 +41,7 @@ function ProductsPage() {
   const [editing, setEditing] = useState<Partial<Product> | null>(null);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
-
-  useEffect(() => {
-    (async () => {
-      const { data: s } = await supabase.auth.getSession();
-      if (!s.session) return nav({ to: "/auth" });
-      const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", s.session.user.id);
-      const admin = (roles ?? []).some(r => r.role === "admin");
-      setIsAdmin(admin);
-      if (!admin) toast.warning("Vous devez être admin pour modifier les produits");
-    })();
-  }, [nav]);
+  const isAdmin = guard.isAdmin;
 
   const reload = async () => {
     setLoading(true);
