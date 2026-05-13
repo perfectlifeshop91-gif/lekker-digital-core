@@ -1,12 +1,10 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
-import { LayoutDashboard, ShoppingCart, History, LogOut, Users, Package, ChefHat, Sparkles, Wallet } from "lucide-react";
-import { toast } from "sonner";
-import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { LayoutDashboard, ShoppingCart, History, Users, Package, ChefHat, Sparkles, Wallet } from "lucide-react";
 import { AIChatWidget } from "@/components/AIChatWidget";
-import logo from "@/assets/lekker-logo.jpg";
+import { StaffNav } from "@/components/StaffNav";
+import { useRouteGuard } from "@/lib/roles";
 
 export const Route = createFileRoute("/admin")({
   component: AdminHome,
@@ -14,15 +12,10 @@ export const Route = createFileRoute("/admin")({
 });
 
 function AdminHome() {
-  const nav = useNavigate();
-  const [email, setEmail] = useState<string | null>(null);
+  useRouteGuard("/admin");
   const [stats, setStats] = useState({ ordersToday: 0, revenueToday: 0, products: 0 });
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      if (!data.session) { nav({ to: "/auth" }); return; }
-      setEmail(data.session.user.email ?? null);
-    });
     (async () => {
       const start = new Date(); start.setHours(0, 0, 0, 0);
       const [{ data: orders }, { count: prodCount }] = await Promise.all([
@@ -33,9 +26,7 @@ function AdminHome() {
       const revenueToday = orders?.reduce((s, o: any) => s + Number(o.total), 0) ?? 0;
       setStats({ ordersToday, revenueToday, products: prodCount ?? 0 });
     })();
-  }, [nav]);
-
-  const logout = async () => { await supabase.auth.signOut(); toast.success("Déconnecté"); nav({ to: "/auth" }); };
+  }, []);
 
   const tiles = [
     { to: "/pos", label: "Caisse / POS", desc: "Encaissement & impression", icon: ShoppingCart, color: "from-amber-500/20 to-amber-700/10" },
