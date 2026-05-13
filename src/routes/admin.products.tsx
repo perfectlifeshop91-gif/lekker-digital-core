@@ -109,19 +109,14 @@ function ProductsPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-10 border-b border-border bg-card/80 backdrop-blur">
-        <div className="flex items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-3">
-            <Link to="/admin" className="rounded-md p-2 hover:bg-muted"><ArrowLeft className="h-4 w-4" /></Link>
-            <h1 className="font-serif text-lg font-semibold">Gestion des produits</h1>
-          </div>
-          {isAdmin && (
-            <Button size="sm" onClick={() => setEditing(emptyProduct())}>
-              <Plus className="mr-2 h-4 w-4" />Nouveau produit
-            </Button>
-          )}
-        </div>
-      </header>
+      <StaffNav title="Gestion des produits" />
+      <div className="flex items-center justify-end px-4 py-3">
+        {isAdmin && (
+          <Button size="sm" onClick={() => setEditing(emptyProduct())}>
+            <Plus className="mr-2 h-4 w-4" />Nouveau produit
+          </Button>
+        )}
+      </div>
 
       <div className="mx-auto max-w-6xl space-y-4 p-4">
         <div className="flex flex-wrap gap-2">
