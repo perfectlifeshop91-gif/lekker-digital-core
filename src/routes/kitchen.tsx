@@ -1,10 +1,10 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
-import { ChefHat, Clock, ArrowLeft, LogOut, Bell } from "lucide-react";
+import { ChefHat, Clock, Bell } from "lucide-react";
 import { toast } from "sonner";
-import logo from "@/assets/lekker-logo.jpg";
+import { StaffNav } from "@/components/StaffNav";
+import { useRouteGuard } from "@/lib/roles";
 
 export const Route = createFileRoute("/kitchen")({
   component: KitchenPage,
@@ -26,14 +26,10 @@ const COLS: { status: string; label: string; color: string }[] = [
 const NEXT: Record<string, string> = { pending: "preparing", preparing: "ready", ready: "delivered" };
 
 function KitchenPage() {
-  const nav = useNavigate();
+  useRouteGuard("/kitchen");
   const [orders, setOrders] = useState<Order[]>([]);
   const [items, setItems] = useState<Record<string, Item[]>>({});
   const [now, setNow] = useState(Date.now());
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => { if (!data.session) nav({ to: "/auth" }); });
-  }, [nav]);
 
   useEffect(() => {
     const load = async () => {
@@ -78,26 +74,13 @@ function KitchenPage() {
     return m < 1 ? "à l'instant" : `${m} min`;
   };
 
-  const logout = async () => { await supabase.auth.signOut(); nav({ to: "/auth" }); };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/30">
-      <header className="sticky top-0 z-10 border-b border-border bg-card/80 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-3">
-            <Link to="/" className="rounded-md p-2 hover:bg-muted"><ArrowLeft className="h-4 w-4" /></Link>
-            <img src={logo} alt="LEKKER" className="h-9 w-9 rounded-full object-cover" />
-            <div>
-              <div className="font-serif text-lg font-semibold flex items-center gap-2"><ChefHat className="h-5 w-5" />Cuisine · Live</div>
-              <div className="text-xs text-muted-foreground">{orders.length} commande(s) actives</div>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Bell className="h-4 w-4 text-emerald-500 animate-pulse" />
-            <Button variant="outline" size="sm" onClick={logout}><LogOut className="mr-2 h-4 w-4" />Sortir</Button>
-          </div>
-        </div>
-      </header>
+      <StaffNav title="Cuisine · Live" />
+      <div className="mx-auto max-w-7xl px-4 pt-3 flex items-center gap-2 text-xs text-muted-foreground">
+        <ChefHat className="h-4 w-4" /> {orders.length} commande(s) actives
+        <Bell className="h-4 w-4 text-emerald-500 animate-pulse ml-auto" />
+      </div>
 
       <main className="mx-auto max-w-7xl p-4">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">

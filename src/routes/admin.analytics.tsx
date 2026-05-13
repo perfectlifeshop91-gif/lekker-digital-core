@@ -1,12 +1,14 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, Download, TrendingUp, ShoppingCart, DollarSign, Users } from "lucide-react";
+import { Download, TrendingUp, ShoppingCart, DollarSign } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   ResponsiveContainer, LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, Tooltip, CartesianGrid, Legend,
 } from "recharts";
+import { StaffNav } from "@/components/StaffNav";
+import { useRouteGuard } from "@/lib/roles";
 
 export const Route = createFileRoute("/admin/analytics")({
   component: AnalyticsPage,
@@ -19,15 +21,13 @@ type Item = { name: string; quantity: number; subtotal: number; product_id: stri
 const COLORS = ["#d4a574", "#8b5a2b", "#c89b6d", "#a87a52", "#e6c9a0", "#704324", "#dab896"];
 
 function AnalyticsPage() {
-  const nav = useNavigate();
+  useRouteGuard("/admin/analytics");
   const [orders, setOrders] = useState<Order[]>([]);
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     (async () => {
-      const { data: s } = await supabase.auth.getSession();
-      if (!s.session) return nav({ to: "/auth" });
       const since = new Date(); since.setDate(since.getDate() - 30);
       const [{ data: o }, { data: i }] = await Promise.all([
         supabase.from("orders").select("id, total, created_at, payment_method").is("deleted_at", null).gte("created_at", since.toISOString()),
@@ -37,7 +37,7 @@ function AnalyticsPage() {
       setItems((i as Item[]) ?? []);
       setLoading(false);
     })();
-  }, [nav]);
+  }, []);
 
   const stats = useMemo(() => {
     const today = new Date().toDateString();
@@ -100,15 +100,10 @@ function AnalyticsPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-10 border-b border-border bg-card/80 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-3">
-            <Link to="/admin" className="rounded-md p-2 hover:bg-muted"><ArrowLeft className="h-4 w-4" /></Link>
-            <h1 className="font-serif text-lg font-semibold">Analytics · 30 derniers jours</h1>
-          </div>
-          <Button size="sm" variant="outline" onClick={exportCsv}><Download className="mr-2 h-4 w-4" />Export CSV</Button>
-        </div>
-      </header>
+      <StaffNav title="Analytics" />
+      <div className="mx-auto flex max-w-7xl items-center justify-end px-4 py-3">
+        <Button size="sm" variant="outline" onClick={exportCsv}><Download className="mr-2 h-4 w-4" />Export CSV</Button>
+      </div>
 
       <main className="mx-auto max-w-7xl space-y-6 p-4">
         {loading ? <div className="py-20 text-center">Chargement…</div> : (
