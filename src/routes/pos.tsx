@@ -16,6 +16,7 @@ import { getProductImage } from "@/lib/product-images";
 import { printBoth, printCustomerReceipt, printKitchenTicket, type ReceiptData } from "@/lib/printing";
 import { LANGS, type Lang } from "@/lib/i18n";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { useRouteGuard } from "@/lib/roles";
 import logo from "@/assets/lekker-logo.jpg";
 
 export const Route = createFileRoute("/pos")({
@@ -39,6 +40,7 @@ const CATS = [
 ];
 
 function POSPage() {
+  useRouteGuard("/pos");
   const isMobile = useIsMobile();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
