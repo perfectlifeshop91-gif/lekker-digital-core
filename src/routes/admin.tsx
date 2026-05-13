@@ -40,22 +40,7 @@ function AdminHome() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/40">
-      <header className="border-b border-border bg-card/60 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6 py-4 gap-2">
-          <div className="flex items-center gap-3 min-w-0">
-            <img src={logo} alt="LEKKER" className="h-10 w-10 rounded-full object-cover shrink-0" />
-            <div className="min-w-0">
-              <div className="font-serif text-xl font-semibold tracking-wider">LEKKER</div>
-              <div className="text-xs text-muted-foreground truncate">Administration</div>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <LanguageSwitcher />
-            <span className="hidden text-sm text-muted-foreground lg:inline">{email}</span>
-            <Button variant="outline" size="sm" onClick={logout}><LogOut className="h-4 w-4 sm:mr-2" /><span className="hidden sm:inline">Sortir</span></Button>
-          </div>
-        </div>
-      </header>
+      <StaffNav title="Administration" />
 
       <main className="mx-auto max-w-7xl px-4 sm:px-6 py-6 sm:py-8">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
