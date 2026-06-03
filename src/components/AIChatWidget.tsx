@@ -4,12 +4,14 @@ import { DefaultChatTransport } from "ai";
 import { MessageCircle, Send, X, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useLang } from "@/lib/i18n";
 
 export function AIChatWidget() {
+  const { t, dir, lang } = useLang();
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const { messages, sendMessage, status } = useChat({
-    transport: new DefaultChatTransport({ api: "/api/chat" }),
+    transport: new DefaultChatTransport({ api: "/api/chat", body: { lang } }),
   });
 
   const send = async () => {
