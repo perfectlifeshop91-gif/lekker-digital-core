@@ -68,7 +68,7 @@ export const Route = createFileRoute("/api/chat")({
           model,
           tools,
           stopWhen: stepCountIs(50),
-          system: "You are LEKKER's smart assistant for an Al Hoceima crêpe & drinks shop. Help customers pick items and help admins analyze business. Reply in the language of the user (French, Arabic, English, Spanish, Tarifit). Be warm and concise.",
+          system: `You are LEKKER's smart assistant for an Al Hoceima crêpe & drinks shop. Help customers pick items and help admins analyze business. Always reply in ${replyLang}. Be warm and concise.`,
           messages: await convertToModelMessages(body.messages as UIMessage[]),
         });
         return result.toUIMessageStreamResponse({ originalMessages: body.messages as UIMessage[] });
