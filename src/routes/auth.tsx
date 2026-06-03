@@ -36,7 +36,7 @@ function AuthPage() {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session) redirectByRole(nav, data.session.user.id);
+      if (data.session) redirectByRole(nav, data.session.user.id, data.session.user.email);
     });
   }, [nav]);
 
@@ -46,7 +46,7 @@ function AuthPage() {
     setLoading(false);
     if (error) return toast.error(error.message);
     toast.success("Connecté");
-    if (data.session) redirectByRole(nav, data.session.user.id);
+    if (data.session) redirectByRole(nav, data.session.user.id, data.session.user.email);
   };
 
   const signUp = async () => {
@@ -65,11 +65,13 @@ function AuthPage() {
   };
 
   const signInGoogle = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: window.location.origin + "/auth" },
+    const result = await lovable.auth.signInWithOAuth("google", {
+      redirect_uri: window.location.origin + "/auth",
     });
-    if (error) toast.error(error.message);
+    if (result.error) return toast.error(result.error.message ?? "Erreur Google");
+    if (result.redirected) return;
+    const { data } = await supabase.auth.getSession();
+    if (data.session) redirectByRole(nav, data.session.user.id, data.session.user.email);
   };
 
   return (
