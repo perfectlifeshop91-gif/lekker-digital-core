@@ -1,11 +1,14 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { LayoutDashboard, ShoppingCart, History, ChefHat, Users, Wallet, Package, BarChart3, LogOut } from "lucide-react";
+import { useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { supabase } from "@/integrations/supabase/client";
 import { canAccess, useRoles, type RoutePath, type Role } from "@/lib/roles";
 import logo from "@/assets/lekker-logo.jpg";
 import { toast } from "sonner";
+
+const IDLE_MS = 30 * 60 * 1000; // 30 min auto-logout
 
 type Item = { to: RoutePath; label: string; icon: React.ComponentType<{ className?: string }> };
 
