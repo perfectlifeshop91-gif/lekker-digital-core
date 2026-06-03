@@ -61,7 +61,7 @@ function AdminHome() {
         </div>
       </main>
 
-      <AIChatWidget />
+      
     </div>
   );
 }
