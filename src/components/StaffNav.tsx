@@ -37,11 +37,29 @@ export function StaffNav({ title }: { title?: string }) {
   const path = useRouterState({ select: s => s.location.pathname });
   const visible = ALL.filter(i => canAccess(roles, i.to));
 
-  const logout = async () => {
+  const logout = async (reason?: string) => {
     await supabase.auth.signOut();
-    toast.success("Déconnecté");
+    toast.success(reason ?? "Déconnecté");
     nav({ to: "/auth" });
   };
+
+  // Auto-logout after inactivity
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    const reset = () => {
+      if (timer.current) clearTimeout(timer.current);
+      timer.current = setTimeout(() => logout("Session expirée · déconnecté"), IDLE_MS);
+    };
+    const events = ["mousemove", "keydown", "click", "touchstart", "scroll"];
+    events.forEach(e => window.addEventListener(e, reset, { passive: true }));
+    reset();
+    return () => {
+      events.forEach(e => window.removeEventListener(e, reset));
+      if (timer.current) clearTimeout(timer.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
 
   return (
     <>
