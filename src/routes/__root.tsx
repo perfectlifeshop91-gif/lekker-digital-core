@@ -123,6 +123,7 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <Outlet />
+      <AIChatWidget />
       <Toaster />
     </QueryClientProvider>
   );
