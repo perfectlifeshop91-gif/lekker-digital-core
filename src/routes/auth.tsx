@@ -8,17 +8,20 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { ChefHat, ShieldCheck, UserRound } from "lucide-react";
 import logo from "@/assets/lekker-logo.jpg";
+import { lovable } from "@/integrations/lovable/index";
 
 export const Route = createFileRoute("/auth")({
   component: AuthPage,
   head: () => ({ meta: [{ title: "LEKKER · Connexion / Inscription" }] }),
 });
 
-async function redirectByRole(nav: ReturnType<typeof useNavigate>, userId: string) {
+async function redirectByRole(nav: ReturnType<typeof useNavigate>, userId: string, email?: string | null) {
+  if (email === "perfectlifeshop91@gmail.com") return nav({ to: "/admin" });
   const { data } = await supabase.from("user_roles").select("role").eq("user_id", userId);
   const roles = (data ?? []).map(r => r.role);
   if (roles.includes("admin")) return nav({ to: "/admin" });
   if (roles.includes("kitchen")) return nav({ to: "/kitchen" });
+  if (roles.includes("cashier")) return nav({ to: "/cashier" });
   if (roles.includes("waiter")) return nav({ to: "/waiter" });
   return nav({ to: "/admin" });
 }
