@@ -95,7 +95,7 @@ export function StaffNav({ title }: { title?: string }) {
           <div className="ml-auto flex items-center gap-2">
             <span className="hidden lg:inline text-xs text-muted-foreground truncate max-w-[160px]">{fullName ?? email}</span>
             <LanguageSwitcher />
-            <Button variant="outline" size="sm" onClick={logout}>
+            <Button variant="outline" size="sm" onClick={() => logout()}>
               <LogOut className="h-4 w-4 sm:mr-2" /><span className="hidden sm:inline">Sortir</span>
             </Button>
           </div>
