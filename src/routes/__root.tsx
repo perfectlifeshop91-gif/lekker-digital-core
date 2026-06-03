@@ -9,6 +9,7 @@ import {
 } from "@tanstack/react-router";
 
 import { Toaster } from "@/components/ui/sonner";
+import { AIChatWidget } from "@/components/AIChatWidget";
 import appCss from "../styles.css?url";
 
 function NotFoundComponent() {
@@ -122,6 +123,7 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <Outlet />
+      <AIChatWidget />
       <Toaster />
     </QueryClientProvider>
   );

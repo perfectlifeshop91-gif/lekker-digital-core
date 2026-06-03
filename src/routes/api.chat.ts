@@ -9,8 +9,10 @@ export const Route = createFileRoute("/api/chat")({
   server: {
     handlers: {
       POST: async ({ request }: { request: Request }) => {
-        const body = (await request.json()) as { messages?: unknown };
+        const body = (await request.json()) as { messages?: unknown; lang?: string };
         if (!Array.isArray(body.messages)) return new Response("Messages required", { status: 400 });
+        const langMap: Record<string, string> = { fr: "French", ar: "Arabic", ber: "Tarifit (Berber)", en: "English", es: "Spanish" };
+        const replyLang = langMap[body.lang ?? "fr"] ?? "French";
 
         const key = process.env.LOVABLE_API_KEY;
         if (!key) return new Response("Missing LOVABLE_API_KEY", { status: 500 });
@@ -66,7 +68,7 @@ export const Route = createFileRoute("/api/chat")({
           model,
           tools,
           stopWhen: stepCountIs(50),
-          system: "You are LEKKER's smart assistant for an Al Hoceima crêpe & drinks shop. Help customers pick items and help admins analyze business. Reply in the language of the user (French, Arabic, English, Spanish, Tarifit). Be warm and concise.",
+          system: `You are LEKKER's smart assistant for an Al Hoceima crêpe & drinks shop. Help customers pick items and help admins analyze business. Always reply in ${replyLang}. Be warm and concise.`,
           messages: await convertToModelMessages(body.messages as UIMessage[]),
         });
         return result.toUIMessageStreamResponse({ originalMessages: body.messages as UIMessage[] });

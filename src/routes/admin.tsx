@@ -2,7 +2,6 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { LayoutDashboard, ShoppingCart, History, Users, Package, ChefHat, Sparkles, Wallet } from "lucide-react";
-import { AIChatWidget } from "@/components/AIChatWidget";
 import { StaffNav } from "@/components/StaffNav";
 import { useRouteGuard } from "@/lib/roles";
 
@@ -62,7 +61,7 @@ function AdminHome() {
         </div>
       </main>
 
-      <AIChatWidget />
+      
     </div>
   );
 }

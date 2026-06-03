@@ -1,11 +1,14 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { LayoutDashboard, ShoppingCart, History, ChefHat, Users, Wallet, Package, BarChart3, LogOut } from "lucide-react";
+import { useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { supabase } from "@/integrations/supabase/client";
 import { canAccess, useRoles, type RoutePath, type Role } from "@/lib/roles";
 import logo from "@/assets/lekker-logo.jpg";
 import { toast } from "sonner";
+
+const IDLE_MS = 30 * 60 * 1000; // 30 min auto-logout
 
 type Item = { to: RoutePath; label: string; icon: React.ComponentType<{ className?: string }> };
 
@@ -34,11 +37,29 @@ export function StaffNav({ title }: { title?: string }) {
   const path = useRouterState({ select: s => s.location.pathname });
   const visible = ALL.filter(i => canAccess(roles, i.to));
 
-  const logout = async () => {
+  const logout = async (reason?: string) => {
     await supabase.auth.signOut();
-    toast.success("Déconnecté");
+    toast.success(reason ?? "Déconnecté");
     nav({ to: "/auth" });
   };
+
+  // Auto-logout after inactivity
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    const reset = () => {
+      if (timer.current) clearTimeout(timer.current);
+      timer.current = setTimeout(() => logout("Session expirée · déconnecté"), IDLE_MS);
+    };
+    const events = ["mousemove", "keydown", "click", "touchstart", "scroll"];
+    events.forEach(e => window.addEventListener(e, reset, { passive: true }));
+    reset();
+    return () => {
+      events.forEach(e => window.removeEventListener(e, reset));
+      if (timer.current) clearTimeout(timer.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
 
   return (
     <>
@@ -74,7 +95,7 @@ export function StaffNav({ title }: { title?: string }) {
           <div className="ml-auto flex items-center gap-2">
             <span className="hidden lg:inline text-xs text-muted-foreground truncate max-w-[160px]">{fullName ?? email}</span>
             <LanguageSwitcher />
-            <Button variant="outline" size="sm" onClick={logout}>
+            <Button variant="outline" size="sm" onClick={() => logout()}>
               <LogOut className="h-4 w-4 sm:mr-2" /><span className="hidden sm:inline">Sortir</span>
             </Button>
           </div>
