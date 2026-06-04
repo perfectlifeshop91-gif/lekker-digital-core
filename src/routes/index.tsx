@@ -1,6 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { Heart, Instagram, Mail, MapPin, Sparkles, Star, Leaf, Clock, ArrowRight } from "lucide-react";
+import { Heart, Instagram, Mail, MapPin, Sparkles, Star, Leaf, Clock, ArrowRight, Menu } from "lucide-react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
 import logo from "@/assets/lekker-logo.jpg";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { useLang } from "@/lib/i18n";
