@@ -73,12 +73,45 @@ function Index() {
       {/* Floating pill NAV */}
       <header className="sticky top-0 z-50 px-3 pt-3 sm:pt-5">
         <div className="mx-auto max-w-6xl flex items-center gap-2 rounded-full border border-border/60 bg-card/80 backdrop-blur-xl px-3 py-2 shadow-soft">
+          {/* Mobile hamburger */}
+          <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" className="md:hidden rounded-full" aria-label="Menu">
+                <Menu className="h-5 w-5" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-72 p-0">
+              <SheetHeader className="border-b border-border px-4 py-3">
+                <SheetTitle className="flex items-center gap-2">
+                  <img src={logo} alt="LEKKER" className="h-8 w-8 rounded-full object-cover" />
+                  <span className="font-serif text-base">LEKKER</span>
+                </SheetTitle>
+              </SheetHeader>
+              <nav className="flex flex-col gap-1 p-3">
+                {navItems.map((item) => (
+                  item.anchor ? (
+                    <a key={item.label} href="#menu" onClick={() => setMenuOpen(false)}
+                      className="rounded-lg px-3 py-2.5 text-sm hover:bg-muted text-foreground">{item.label}</a>
+                  ) : (
+                    <Link key={item.label} to={item.to as any} onClick={() => setMenuOpen(false)}
+                      className="rounded-lg px-3 py-2.5 text-sm hover:bg-muted text-foreground">{item.label}</Link>
+                  )
+                ))}
+                <a href="#menu" onClick={() => setMenuOpen(false)}
+                  className="mt-2 rounded-lg bg-primary px-3 py-2.5 text-sm font-medium text-primary-foreground text-center">
+                  {t("home_order")}
+                </a>
+              </nav>
+            </SheetContent>
+          </Sheet>
+
           <Link to="/" className="flex items-center gap-2 shrink-0 pl-1">
             <img src={logo} alt="LEKKER" className="h-9 w-9 rounded-full object-cover ring-1 ring-primary/30" />
             <span className="hidden sm:inline text-lg font-semibold tracking-tight" style={{ fontFamily: "'Cormorant Garamond',serif" }}>LEKKER</span>
           </Link>
 
-          <nav className="mx-auto flex items-center gap-1 overflow-x-auto no-scrollbar text-sm">
+          {/* Desktop nav */}
+          <nav className="mx-auto hidden md:flex items-center gap-1 overflow-x-auto no-scrollbar text-sm">
             {navItems.map((item) => (
               item.anchor ? (
                 <a key={item.label} href="#menu"
@@ -96,7 +129,7 @@ function Index() {
             ))}
           </nav>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="ml-auto flex items-center gap-2 shrink-0">
             <LanguageSwitcher />
             <a href="#menu"
               className="hidden sm:inline-flex items-center gap-1.5 bg-primary text-primary-foreground px-4 py-2 rounded-full text-sm font-medium hover:opacity-90 transition shadow-soft">
