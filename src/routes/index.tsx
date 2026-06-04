@@ -29,6 +29,7 @@ export const Route = createFileRoute("/")({
 function Index() {
   const { t, dir } = useLang();
   const [active, setActive] = useState("crepes");
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const categories = [
     { id: "crepes", label: t("home_cat_crepes"), icon: "🥞", items: [
