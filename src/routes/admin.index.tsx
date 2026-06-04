@@ -5,7 +5,7 @@ import { LayoutDashboard, ShoppingCart, History, Users, Package, ChefHat, Sparkl
 import { StaffNav } from "@/components/StaffNav";
 import { useRouteGuard } from "@/lib/roles";
 
-export const Route = createFileRoute("/admin")({
+export const Route = createFileRoute("/admin/")({
   component: AdminHome,
   head: () => ({ meta: [{ title: "LEKKER · Administration" }] }),
 });
