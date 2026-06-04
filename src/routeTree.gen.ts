@@ -67,14 +67,14 @@ const ApiChatRoute = ApiChatRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminProductsRoute = AdminProductsRouteImport.update({
-  id: '/products',
-  path: '/products',
-  getParentRoute: () => AdminRoute,
+  id: '/admin/products',
+  path: '/admin/products',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AdminAnalyticsRoute = AdminAnalyticsRouteImport.update({
-  id: '/analytics',
-  path: '/analytics',
-  getParentRoute: () => AdminRoute,
+  id: '/admin/analytics',
+  path: '/admin/analytics',
+  getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -167,6 +167,8 @@ export interface RootRouteChildren {
   OrdersRoute: typeof OrdersRoute
   PosRoute: typeof PosRoute
   WaiterRoute: typeof WaiterRoute
+  AdminAnalyticsRoute: typeof AdminAnalyticsRoute
+  AdminProductsRoute: typeof AdminProductsRoute
   ApiChatRoute: typeof ApiChatRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
@@ -238,17 +240,17 @@ declare module '@tanstack/react-router' {
     }
     '/admin/products': {
       id: '/admin/products'
-      path: '/products'
+      path: '/admin/products'
       fullPath: '/admin/products'
       preLoaderRoute: typeof AdminProductsRouteImport
-      parentRoute: typeof AdminRoute
+      parentRoute: typeof rootRouteImport
     }
     '/admin/analytics': {
       id: '/admin/analytics'
-      path: '/analytics'
+      path: '/admin/analytics'
       fullPath: '/admin/analytics'
       preLoaderRoute: typeof AdminAnalyticsRouteImport
-      parentRoute: typeof AdminRoute
+      parentRoute: typeof rootRouteImport
     }
   }
 }
@@ -261,6 +263,8 @@ const rootRouteChildren: RootRouteChildren = {
   OrdersRoute: OrdersRoute,
   PosRoute: PosRoute,
   WaiterRoute: WaiterRoute,
+  AdminAnalyticsRoute: AdminAnalyticsRoute,
+  AdminProductsRoute: AdminProductsRoute,
   ApiChatRoute: ApiChatRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
