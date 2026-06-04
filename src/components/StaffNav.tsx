@@ -1,7 +1,8 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { LayoutDashboard, ShoppingCart, History, ChefHat, Users, Wallet, Package, BarChart3, LogOut } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { LayoutDashboard, ShoppingCart, History, ChefHat, Users, Wallet, Package, BarChart3, LogOut, Menu } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { supabase } from "@/integrations/supabase/client";
 import { canAccess, useRoles, type RoutePath, type Role } from "@/lib/roles";
@@ -36,6 +37,7 @@ export function StaffNav({ title }: { title?: string }) {
   const { roles, fullName, email } = useRoles();
   const path = useRouterState({ select: s => s.location.pathname });
   const visible = ALL.filter(i => canAccess(roles, i.to));
+  const [open, setOpen] = useState(false);
 
   const logout = async (reason?: string) => {
     await supabase.auth.signOut();
@@ -60,71 +62,91 @@ export function StaffNav({ title }: { title?: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Close mobile sheet whenever route changes
+  useEffect(() => { setOpen(false); }, [path]);
 
   return (
-    <>
-      {/* Desktop / tablet top bar */}
-      <header className="sticky top-0 z-40 border-b border-border bg-card/80 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-2.5">
-          <Link to="/admin" className="flex items-center gap-2 shrink-0">
-            <img src={logo} alt="LEKKER" className="h-9 w-9 rounded-full object-cover" />
-            <div className="hidden sm:block leading-tight">
-              <div className="font-serif text-base font-semibold tracking-wide">LEKKER</div>
-              <div className="text-[10px] uppercase tracking-widest text-muted-foreground">{title ?? roleLabel(roles)}</div>
-            </div>
-          </Link>
-
-          <nav className="ml-2 hidden md:flex items-center gap-1 overflow-x-auto">
-            {visible.map(i => {
-              const active = path === i.to || (i.to !== "/admin" && path.startsWith(i.to));
-              return (
-                <Link
-                  key={i.to}
-                  to={i.to}
-                  className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm transition ${
-                    active ? "bg-primary text-primary-foreground shadow-sm" : "hover:bg-muted text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  <i.icon className="h-4 w-4" />
-                  {i.label}
-                </Link>
-              );
-            })}
-          </nav>
-
-          <div className="ml-auto flex items-center gap-2">
-            <span className="hidden lg:inline text-xs text-muted-foreground truncate max-w-[160px]">{fullName ?? email}</span>
-            <LanguageSwitcher />
-            <Button variant="outline" size="sm" onClick={() => logout()}>
-              <LogOut className="h-4 w-4 sm:mr-2" /><span className="hidden sm:inline">Sortir</span>
+    <header className="sticky top-0 z-40 border-b border-border bg-card/80 backdrop-blur">
+      <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-2.5">
+        {/* Mobile menu trigger */}
+        <Sheet open={open} onOpenChange={setOpen}>
+          <SheetTrigger asChild>
+            <Button variant="ghost" size="icon" className="md:hidden" aria-label="Menu">
+              <Menu className="h-5 w-5" />
             </Button>
-          </div>
-        </div>
-      </header>
+          </SheetTrigger>
+          <SheetContent side="left" className="w-72 p-0">
+            <SheetHeader className="border-b border-border px-4 py-3">
+              <SheetTitle className="flex items-center gap-2">
+                <img src={logo} alt="LEKKER" className="h-8 w-8 rounded-full object-cover" />
+                <div className="leading-tight text-left">
+                  <div className="font-serif text-base">LEKKER</div>
+                  <div className="text-[10px] uppercase tracking-widest text-muted-foreground">{title ?? roleLabel(roles)}</div>
+                </div>
+              </SheetTitle>
+            </SheetHeader>
+            <nav className="flex flex-col gap-1 p-3">
+              {visible.map(i => {
+                const active = path === i.to || (i.to !== "/admin" && path.startsWith(i.to));
+                return (
+                  <Link
+                    key={i.to}
+                    to={i.to}
+                    onClick={() => setOpen(false)}
+                    className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition ${
+                      active ? "bg-primary text-primary-foreground" : "hover:bg-muted text-foreground"
+                    }`}
+                  >
+                    <i.icon className="h-4 w-4" />
+                    {i.label}
+                  </Link>
+                );
+              })}
+            </nav>
+            <div className="border-t border-border px-3 py-3 mt-auto">
+              <div className="mb-2 truncate text-xs text-muted-foreground">{fullName ?? email}</div>
+              <Button variant="outline" size="sm" className="w-full" onClick={() => logout()}>
+                <LogOut className="mr-2 h-4 w-4" /> Sortir
+              </Button>
+            </div>
+          </SheetContent>
+        </Sheet>
 
-      {/* Mobile bottom bar */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-card/95 backdrop-blur md:hidden">
-        <div className="grid grid-flow-col auto-cols-fr">
-          {visible.slice(0, 5).map(i => {
+        <Link to="/admin" className="flex items-center gap-2 shrink-0">
+          <img src={logo} alt="LEKKER" className="h-9 w-9 rounded-full object-cover" />
+          <div className="hidden sm:block leading-tight">
+            <div className="font-serif text-base font-semibold tracking-wide">LEKKER</div>
+            <div className="text-[10px] uppercase tracking-widest text-muted-foreground">{title ?? roleLabel(roles)}</div>
+          </div>
+        </Link>
+
+        {/* Desktop nav */}
+        <nav className="ml-2 hidden md:flex items-center gap-1 overflow-x-auto">
+          {visible.map(i => {
             const active = path === i.to || (i.to !== "/admin" && path.startsWith(i.to));
             return (
               <Link
                 key={i.to}
                 to={i.to}
-                className={`flex flex-col items-center justify-center gap-0.5 py-2 text-[10px] font-medium transition ${
-                  active ? "text-primary" : "text-muted-foreground"
+                className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm transition ${
+                  active ? "bg-primary text-primary-foreground shadow-sm" : "hover:bg-muted text-muted-foreground hover:text-foreground"
                 }`}
               >
-                <i.icon className={`h-5 w-5 ${active ? "scale-110" : ""}`} />
+                <i.icon className="h-4 w-4" />
                 {i.label}
               </Link>
             );
           })}
-        </div>
-      </nav>
+        </nav>
 
-      {/* Spacer so mobile content isn't covered by bottom bar */}
-      <div aria-hidden className="h-14 md:hidden" />
-    </>
+        <div className="ml-auto flex items-center gap-2">
+          <span className="hidden lg:inline text-xs text-muted-foreground truncate max-w-[160px]">{fullName ?? email}</span>
+          <LanguageSwitcher />
+          <Button variant="outline" size="sm" className="hidden md:inline-flex" onClick={() => logout()}>
+            <LogOut className="h-4 w-4 sm:mr-2" /><span className="hidden sm:inline">Sortir</span>
+          </Button>
+        </div>
+      </div>
+    </header>
   );
 }
