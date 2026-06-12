@@ -39,8 +39,9 @@ function WaiterPage() {
   }, [userId]);
 
   const today = new Date().toDateString();
-  const mine = orders.filter(o => o.waiter_id === userId);
-  const todayMine = mine.filter(o => new Date(o.created_at).toDateString() === today);
+  const todayAll = orders.filter(o => new Date(o.created_at).toDateString() === today);
+  
+  const todayMine = todayAll.filter(o => o.waiter_id === userId || o.waiter_id === null);
   const active = orders.filter(o => ["pending", "preparing", "ready"].includes(o.status));
   const ready = orders.filter(o => o.status === "ready");
   const revenue = todayMine.reduce((s, o) => s + Number(o.total), 0);
