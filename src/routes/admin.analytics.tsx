@@ -290,7 +290,7 @@ function AnalyticsPage() {
     <div className="min-h-screen bg-background">
       <StaffNav title="Analytics" />
       <div className="mx-auto flex max-w-7xl items-center justify-end px-4 py-3">
-        <Button size="sm" variant="outline" onClick={exportCsv}><Download className="mr-2 h-4 w-4" />Export CSV</Button>
+        <Button size="sm" variant="outline" onClick={exportCsv}><Download className="mr-2 h-4 w-4" />Export Excel</Button>
       </div>
 
       <main className="mx-auto max-w-7xl space-y-6 p-4">
