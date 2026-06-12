@@ -101,6 +101,8 @@ function POSPage() {
 
   const checkout = async () => {
     if (cart.length === 0) return toast.error("Panier vide");
+    const { data: sessionData } = await supabase.auth.getSession();
+    const uid = sessionData.session?.user.id ?? null;
     const { data: order, error } = await supabase.from("orders").insert({
       subtotal, tax, total,
       discount: discountAmt,
@@ -108,6 +110,7 @@ function POSPage() {
       table_number: tableNumber || null,
       customer_name: customer || null,
       notes: notes || null,
+      waiter_id: uid,
     }).select().single();
     if (error || !order) return toast.error("Erreur commande: " + (error?.message ?? ""));
     const items = cart.map(i => ({
