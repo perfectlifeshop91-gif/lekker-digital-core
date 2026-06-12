@@ -77,10 +77,10 @@ function openPrintWindow(title: string, bodyHtml: string) {
   setTimeout(() => { try { w.print(); } catch {} setTimeout(() => w.close(), 500); }, 400);
 }
 
-export function printKitchenTicket(d: ReceiptData) {
-  // Kitchen ticket always in FR for staff consistency
+export function kitchenTicketHtml(d: ReceiptData) {
   const time = d.date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-  const html = `
+  return `
+    <div class="ticket">
     <h2 class="brand">CUISINE · KITCHEN</h2>
     <div class="ctr huge">#${d.orderNumber}</div>
     <div class="ssep"></div>
@@ -100,18 +100,19 @@ export function printKitchenTicket(d: ReceiptData) {
     ${d.notes ? `<div class="sep"></div><div class="big">⚠ NOTES:</div><div>${d.notes}</div>` : ""}
     <div class="sep"></div>
     <div class="ctr small">--- FIN COMMANDE ---</div>
+    </div>
   `;
-  openPrintWindow(`Cuisine #${d.orderNumber}`, html);
 }
 
-export function printCustomerReceipt(d: ReceiptData) {
+export function customerReceiptHtml(d: ReceiptData) {
   const lang: Lang = d.lang ?? "fr";
   const rtl = LANGS.find(l => l.code === lang)?.rtl ?? false;
   const t = (k: Parameters<typeof tr>[0]) => tr(k, lang);
   const qrData = encodeURIComponent(`LEKKER#${d.orderNumber}`);
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${qrData}`;
   const payLabel = d.payment === "cash" ? t("cash") : d.payment === "card" ? t("card") : t("transfer");
-  const html = `
+  return `
+    <div class="ticket${rtl ? " rtl" : ""}">
     ${d.logoUrl ? `<img src="${d.logoUrl}" class="logo" alt="LEKKER" />` : ""}
     <h1 class="brand">LEKKER</h1>
     <div class="ctr small">Crêpes · Jus · Mojitos</div>
@@ -147,11 +148,21 @@ export function printCustomerReceipt(d: ReceiptData) {
       📷 instagram.com/lekker___1<br/>
       📍 Al Hoceima, Morocco
     </div>
+    </div>
   `;
-  openPrintWindow(`Ticket #${d.orderNumber}`, html, rtl);
+}
+
+export function printKitchenTicket(d: ReceiptData) {
+  openPrintWindow(`Cuisine #${d.orderNumber}`, kitchenTicketHtml(d));
+}
+
+export function printCustomerReceipt(d: ReceiptData) {
+  openPrintWindow(`Ticket #${d.orderNumber}`, customerReceiptHtml(d));
 }
 
 export function printBoth(d: ReceiptData) {
-  printKitchenTicket(d);
-  setTimeout(() => printCustomerReceipt(d), 800);
+  // One window, two tickets separated by a page break — avoids popup blockers
+  // and renders kitchen + customer receipts in a single print job.
+  const html = `${kitchenTicketHtml(d)}<div class="page-break"></div>${customerReceiptHtml(d)}`;
+  openPrintWindow(`LEKKER #${d.orderNumber}`, html);
 }
