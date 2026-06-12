@@ -30,8 +30,11 @@ export type ReceiptData = {
 const baseStyles = `
   @page { size: 80mm auto; margin: 0; }
   * { box-sizing: border-box; }
-  body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; padding: 8px 10px; color: #000; margin: 0; width: 80mm; font-size: 12px; }
-  body.rtl { direction: rtl; text-align: right; }
+  html, body { margin: 0; padding: 0; }
+  body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; color: #000; width: 80mm; font-size: 12px; }
+  .ticket { padding: 8px 10px; }
+  .ticket.rtl { direction: rtl; text-align: right; }
+  .page-break { page-break-after: always; break-after: page; height: 0; }
   h1 { font-size: 22px; margin: 4px 0; text-align: center; letter-spacing: 4px; font-weight: 800; }
   h2 { font-size: 14px; margin: 2px 0; text-align: center; font-weight: 600; }
   .ctr { text-align: center; }
@@ -50,20 +53,34 @@ const baseStyles = `
   .brand { font-family: 'Cormorant Garamond', Georgia, serif; }
 `;
 
-function openPrintWindow(title: string, html: string, rtl = false) {
+function openPrintWindow(title: string, bodyHtml: string) {
   const w = window.open("", "_blank", "width=380,height=720");
-  if (!w) return;
-  const cls = rtl ? "rtl" : "";
-  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${title}</title><style>${baseStyles}</style></head><body class="${cls}">${html}</body></html>`);
+  if (!w) {
+    // popup blocked → fall back to in-page print of a hidden iframe
+    const iframe = document.createElement("iframe");
+    iframe.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:0;";
+    document.body.appendChild(iframe);
+    const doc = iframe.contentDocument!;
+    doc.open();
+    doc.write(`<!doctype html><html><head><meta charset="utf-8"><title>${title}</title><style>${baseStyles}</style></head><body>${bodyHtml}</body></html>`);
+    doc.close();
+    setTimeout(() => {
+      iframe.contentWindow?.focus();
+      iframe.contentWindow?.print();
+      setTimeout(() => iframe.remove(), 1000);
+    }, 400);
+    return;
+  }
+  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${title}</title><style>${baseStyles}</style></head><body>${bodyHtml}</body></html>`);
   w.document.close();
   w.focus();
-  setTimeout(() => { w.print(); setTimeout(() => w.close(), 300); }, 250);
+  setTimeout(() => { try { w.print(); } catch {} setTimeout(() => w.close(), 500); }, 400);
 }
 
-export function printKitchenTicket(d: ReceiptData) {
-  // Kitchen ticket always in FR for staff consistency
+export function kitchenTicketHtml(d: ReceiptData) {
   const time = d.date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-  const html = `
+  return `
+    <div class="ticket">
     <h2 class="brand">CUISINE · KITCHEN</h2>
     <div class="ctr huge">#${d.orderNumber}</div>
     <div class="ssep"></div>
@@ -83,18 +100,19 @@ export function printKitchenTicket(d: ReceiptData) {
     ${d.notes ? `<div class="sep"></div><div class="big">⚠ NOTES:</div><div>${d.notes}</div>` : ""}
     <div class="sep"></div>
     <div class="ctr small">--- FIN COMMANDE ---</div>
+    </div>
   `;
-  openPrintWindow(`Cuisine #${d.orderNumber}`, html);
 }
 
-export function printCustomerReceipt(d: ReceiptData) {
+export function customerReceiptHtml(d: ReceiptData) {
   const lang: Lang = d.lang ?? "fr";
   const rtl = LANGS.find(l => l.code === lang)?.rtl ?? false;
   const t = (k: Parameters<typeof tr>[0]) => tr(k, lang);
   const qrData = encodeURIComponent(`LEKKER#${d.orderNumber}`);
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${qrData}`;
   const payLabel = d.payment === "cash" ? t("cash") : d.payment === "card" ? t("card") : t("transfer");
-  const html = `
+  return `
+    <div class="ticket${rtl ? " rtl" : ""}">
     ${d.logoUrl ? `<img src="${d.logoUrl}" class="logo" alt="LEKKER" />` : ""}
     <h1 class="brand">LEKKER</h1>
     <div class="ctr small">Crêpes · Jus · Mojitos</div>
@@ -130,11 +148,21 @@ export function printCustomerReceipt(d: ReceiptData) {
       📷 instagram.com/lekker___1<br/>
       📍 Al Hoceima, Morocco
     </div>
+    </div>
   `;
-  openPrintWindow(`Ticket #${d.orderNumber}`, html, rtl);
+}
+
+export function printKitchenTicket(d: ReceiptData) {
+  openPrintWindow(`Cuisine #${d.orderNumber}`, kitchenTicketHtml(d));
+}
+
+export function printCustomerReceipt(d: ReceiptData) {
+  openPrintWindow(`Ticket #${d.orderNumber}`, customerReceiptHtml(d));
 }
 
 export function printBoth(d: ReceiptData) {
-  printKitchenTicket(d);
-  setTimeout(() => printCustomerReceipt(d), 800);
+  // One window, two tickets separated by a page break — avoids popup blockers
+  // and renders kitchen + customer receipts in a single print job.
+  const html = `${kitchenTicketHtml(d)}<div class="page-break"></div>${customerReceiptHtml(d)}`;
+  openPrintWindow(`LEKKER #${d.orderNumber}`, html);
 }

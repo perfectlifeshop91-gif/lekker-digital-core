@@ -16,7 +16,7 @@ export const Route = createFileRoute("/auth")({
 });
 
 async function redirectByRole(nav: ReturnType<typeof useNavigate>, userId: string, email?: string | null) {
-  if (email === "lekker.viya@gmail.com" || email === "lekker.hcm@gmail.com") return nav({ to: "/admin" });
+  if (email === "lekker.viya@gmail.com") return nav({ to: "/admin" });
   const { data } = await supabase.from("user_roles").select("role").eq("user_id", userId);
   const roles = (data ?? []).map(r => r.role);
   if (roles.includes("admin")) return nav({ to: "/admin" });
