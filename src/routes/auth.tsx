@@ -12,6 +12,10 @@ import { lovable } from "@/integrations/lovable/index";
 
 export const Route = createFileRoute("/auth")({
   component: AuthPage,
+  validateSearch: (s: Record<string, unknown>): { next?: string } => {
+    const n = typeof s.next === "string" && s.next.startsWith("/") && !s.next.startsWith("//") ? s.next : undefined;
+    return n ? { next: n } : {};
+  },
   head: () => ({ meta: [{ title: "LEKKER · Connexion / Inscription" }] }),
 });
 
@@ -28,17 +32,27 @@ async function redirectByRole(nav: ReturnType<typeof useNavigate>, userId: strin
 
 function AuthPage() {
   const nav = useNavigate();
+  const { next } = Route.useSearch();
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [role, setRole] = useState<"waiter" | "kitchen" | "cashier">("waiter");
 
+  const afterAuth = (userId: string, userEmail?: string | null) => {
+    if (next) {
+      window.location.href = next;
+      return;
+    }
+    redirectByRole(nav, userId, userEmail);
+  };
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session) redirectByRole(nav, data.session.user.id, data.session.user.email);
+      if (data.session) afterAuth(data.session.user.id, data.session.user.email);
     });
-  }, [nav]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nav, next]);
 
   const signIn = async () => {
     setLoading(true);
@@ -46,7 +60,7 @@ function AuthPage() {
     setLoading(false);
     if (error) return toast.error(error.message);
     toast.success("Connecté");
-    if (data.session) redirectByRole(nav, data.session.user.id, data.session.user.email);
+    if (data.session) afterAuth(data.session.user.id, data.session.user.email);
   };
 
   const signUp = async () => {
@@ -56,7 +70,7 @@ function AuthPage() {
       email, password,
       options: {
         data: { full_name: name, signup_role: role },
-        emailRedirectTo: window.location.origin + "/auth",
+        emailRedirectTo: window.location.origin + "/auth" + (next ? `?next=${encodeURIComponent(next)}` : ""),
       },
     });
     setLoading(false);
@@ -66,13 +80,14 @@ function AuthPage() {
 
   const signInGoogle = async () => {
     const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin + "/auth",
+      redirect_uri: window.location.origin + "/auth" + (next ? `?next=${encodeURIComponent(next)}` : ""),
     });
     if (result.error) return toast.error(result.error.message ?? "Erreur Google");
     if (result.redirected) return;
     const { data } = await supabase.auth.getSession();
-    if (data.session) redirectByRole(nav, data.session.user.id, data.session.user.email);
+    if (data.session) afterAuth(data.session.user.id, data.session.user.email);
   };
+
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background via-background to-muted p-4">
